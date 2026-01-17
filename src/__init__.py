@@ -1,0 +1,1 @@
+# Stock data management library

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "oh-my-astock"
+version = "0.1.0"
+description = "DuckDB-based stock data management library"
+authors = [{name = "Claude Code"}]
+requires-python = ">=3.8"
+dependencies = [
+    "duckdb>=0.8.0",
+    "akshare>=1.10.0",
+    "click>=8.0.0",
+]
+
+[project.scripts]
+stocklib = "cli.commands:cli"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q --cov=src --cov-report=term-missing"
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"

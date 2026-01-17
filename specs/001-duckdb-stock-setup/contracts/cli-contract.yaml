@@ -1,0 +1,109 @@
+openapi: 3.0.3
+info:
+  title: DuckDB Stock Setup CLI
+  description: Command-line interface for managing stock data in DuckDB
+  version: 1.0.0
+
+servers:
+  - url: cli://localhost
+    description: Local CLI execution
+
+paths:
+  /init:
+    post:
+      summary: Initialize DuckDB database
+      description: Create a new DuckDB database file at specified path
+      parameters:
+        - name: path
+          in: query
+          description: Path to database file (optional, uses default if not provided)
+          schema:
+            type: string
+          example: "D:/DuckDB/astock.duckdb"
+      responses:
+        '200':
+          description: Database initialized successfully
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Database initialized at D:/DuckDB/astock.duckdb"
+        '400':
+          description: Invalid path or initialization failed
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Error: Invalid path provided"
+
+  /fetch-stocks:
+    get:
+      summary: Fetch stock information from akshare API
+      description: Retrieve list of stocks and store in database
+      responses:
+        '200':
+          description: Stocks fetched and stored successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 4500
+                  message:
+                    type: string
+                    example: "Successfully fetched and stored 4500 stocks"
+        '500':
+          description: API failure or database error
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Error: Failed to fetch stocks from API"
+
+  /query-stocks:
+    get:
+      summary: Query stored stock information
+      description: Retrieve stocks from database with optional filtering
+      parameters:
+        - name: code
+          in: query
+          description: Filter by stock code (optional)
+          schema:
+            type: string
+          example: "000001"
+        - name: limit
+          in: query
+          description: Maximum number of results (optional)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+          example: 10
+      responses:
+        '200':
+          description: Query successful
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code:
+                      type: string
+                      example: "000001"
+                    name:
+                      type: string
+                      example: "平安银行"
+                    metadata:
+                      type: object
+                      additionalProperties: true
+        '404':
+          description: No stocks found matching criteria
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "No stocks found"

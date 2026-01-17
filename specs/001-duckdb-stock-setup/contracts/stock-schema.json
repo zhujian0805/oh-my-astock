@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Stock Data Model",
+  "type": "object",
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Unique stock identifier (primary key)",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable stock name",
+      "minLength": 1
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional additional stock information",
+      "additionalProperties": true
+    }
+  },
+  "required": ["code", "name"]
+}
