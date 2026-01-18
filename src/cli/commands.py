@@ -124,10 +124,24 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
         click.echo(f"Processing {len(codes_to_process)} specified stocks: {', '.join(codes_to_process)}")
     elif all_stocks:
         stocks = db_service.get_all_stocks()
-        codes_to_process = [stock.code for stock in stocks]
+        all_codes = [stock.code for stock in stocks]
+
+        # Get codes that already have historical data
+        existing_codes = set(hist_service.get_stocks_with_historical_data())
+
+        # Prioritize codes without historical data first
+        missing_codes = [code for code in all_codes if code not in existing_codes]
+        existing_codes_list = [code for code in all_codes if code in existing_codes]
+
+        # Combine lists: missing codes first, then existing codes
+        codes_to_process = missing_codes + existing_codes_list
+
         if limit:
             codes_to_process = codes_to_process[:limit]
+
         click.echo(f"Processing all {len(codes_to_process)} stocks from database")
+        click.echo(f"  - {len(missing_codes)} stocks without historical data (prioritized first)")
+        click.echo(f"  - {len(existing_codes_list)} stocks with existing historical data")
     else:
         click.echo("Error: Must specify --stock-codes or --all-stocks", err=True)
         return 1
@@ -164,16 +178,16 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
 
                 if result['success']:
                     if result['count'] > 0:
-                        click.echo(f"  ✓ {result['action']}: {result['count']} records stored")
+                        click.echo(f"  [OK] {result['action']}: {result['count']} records stored")
                     else:
-                        click.echo(f"  ✓ {result['action']}")
+                        click.echo(f"  [OK] {result['action']}")
                 else:
-                    click.echo(f"  ✗ Failed: {result.get('error', 'Unknown error')}")
+                    click.echo(f"  [FAIL] Failed: {result.get('error', 'Unknown error')}")
 
             except Exception as e:
                 logger.error(f"Unexpected error processing {stock_code}: {e}")
                 results[stock_code] = {'count': 0, 'action': 'failed'}
-                click.echo(f"  ✗ Unexpected error: {e}")
+                click.echo(f"  [ERROR] Unexpected error: {e}")
 
     # Generate summary
     total_processed = len(results)

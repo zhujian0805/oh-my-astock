@@ -391,6 +391,27 @@ class HistoricalDataService:
             logger.error(f"Failed to get latest date for {stock_code}: {e}")
             return None
 
+    def get_stocks_with_historical_data(self) -> List[str]:
+        """Get all stock codes that have historical data.
+
+        Returns:
+            List of stock codes that exist in the historical data table
+        """
+        try:
+            conn = self.db_connection.connect()
+            result = conn.execute(
+                "SELECT DISTINCT stock_code FROM stock_historical_data ORDER BY stock_code"
+            )
+            rows = result.fetchall()
+
+            stock_codes = [row[0] for row in rows]
+            logger.info(f"Found {len(stock_codes)} stocks with historical data")
+            return stock_codes
+
+        except Exception as e:
+            logger.error(f"Failed to get stocks with historical data: {e}")
+            return []
+
     def check_data_freshness(self, stock_code: str) -> Tuple[bool, Optional[str]]:
         """Check if historical data for a stock is up-to-date.
 
