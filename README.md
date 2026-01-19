@@ -15,35 +15,35 @@ A comprehensive Python library for managing Chinese stock data using DuckDB and 
 
 ## Installation
 
-```bash
-# Install dependencies
-pip install -r requirements.txt
+It is highly recommended to use a virtual environment.
 
-# Or install the package directly
-pip install -e .
-```
-
-## Quick Start
-
-Get started with oh-my-astock in 4 simple steps:
-
-### 🛠️ Step 0: Set up Virtual Environment
-
-First, create and activate a virtual environment:
+### 1. Set up Virtual Environment
 
 **Windows:**
 ```bash
 python -m venv venv
 venv\Scripts\activate
-pip install -r requirements.txt
 ```
 
 **Linux/macOS:**
 ```bash
 python3 -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
 ```
+
+### 2. Install Package
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Install the package in editable mode
+pip install -e .
+```
+
+## Quick Start
+
+Get started with oh-my-astock with this essential workflow:
 
 ### 🚀 Essential 3-Step Workflow
 
