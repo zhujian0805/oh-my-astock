@@ -1,8 +1,8 @@
 """Contract tests for data model validation."""
 
 import pytest
-from src.models.stock import Stock
-from src.models.stock_list import StockList
+from models.stock import Stock
+from models.stock_list import StockList
 
 
 class TestDataModelContract:
@@ -48,7 +48,7 @@ class TestDataModelContract:
         """Test StockList creation."""
         stocks = [
             Stock(code="000001", name="Stock A"),
-            Stock(code="000002", name="Stock B")
+            Stock(code="000002", name="Stock B"),
         ]
         stock_list = StockList(stocks)
 
@@ -59,10 +59,12 @@ class TestDataModelContract:
         """Test StockList validation."""
         # Duplicate codes should fail
         with pytest.raises(ValueError):
-            StockList([
-                Stock(code="000001", name="Stock A"),
-                Stock(code="000001", name="Stock B")
-            ])
+            StockList(
+                [
+                    Stock(code="000001", name="Stock A"),
+                    Stock(code="000001", name="Stock B"),
+                ]
+            )
 
     def test_stock_list_operations(self):
         """Test StockList operations."""

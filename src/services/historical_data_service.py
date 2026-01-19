@@ -28,30 +28,70 @@ class HistoricalDataService:
 
     def _configure_ssl(self):
         """Configure SSL settings to handle certificate issues."""
-        import urllib3
-        import warnings
-        import ssl
         import os
-        import requests
 
-        # Disable SSL warnings globally
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+        # Set environment variables BEFORE importing any HTTP libraries
+        ssl_env_vars = [
+            ('REQUESTS_CA_BUNDLE', ''),
+            ('CURL_CA_BUNDLE', ''),
+            ('SSL_CERT_FILE', ''),
+            ('SSL_CERT_DIR', ''),
+            ('PYTHONHTTPSVERIFY', '0'),
+            ('REQUESTS_INSECURE_SSL', '1')
+        ]
 
-        # Set environment variables to disable SSL verification
-        ssl_env_vars = ['REQUESTS_CA_BUNDLE', 'CURL_CA_BUNDLE', 'SSL_CERT_FILE']
-        for var in ssl_env_vars:
-            os.environ[var] = ''
+        for var, value in ssl_env_vars:
+            os.environ[var] = value
 
-        # Try to set unverified SSL context
-        try:
-            ssl._create_default_https_context = ssl._create_unverified_context
-        except Exception as e:
-            logger.debug(f"Could not set unverified SSL context: {e}")
+        # Import and configure SSL
+        self._configure_ssl_context()
 
-        # Monkey patch libraries to disable SSL verification
+        # Import and patch HTTP libraries
+        self._patch_httpx_ssl()
         self._patch_urllib3()
         self._patch_requests()
+
+    def _configure_ssl_context(self):
+        """Configure SSL context globally."""
+        try:
+            import ssl
+            import warnings
+            import urllib3
+
+            # Disable SSL warnings
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+            warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+
+            # Create and set unverified SSL context
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
+            # Monkey patch SSL contexts
+            ssl._create_default_https_context = lambda: ssl_context
+            ssl._create_unverified_context = lambda: ssl_context
+
+            # Also try to patch the stdlib SSL module
+            import _ssl
+            if hasattr(_ssl, 'SSLContext'):
+                _ssl.SSLContext.check_hostname = False
+                _ssl.SSLContext.verify_mode = ssl.CERT_NONE
+
+            logger.debug("Successfully configured SSL context")
+        except Exception as e:
+            logger.debug(f"Could not configure SSL context: {e}")
+
+    def _patch_httpx_ssl(self):
+        """Patch httpx library if available (akshare may use it)."""
+        try:
+            import httpx
+            # Disable SSL verification for httpx
+            httpx._config.DEFAULT_SSL_CONFIG = httpx.SSLConfig(verify=False, cert=None, key=None)
+            logger.debug("Successfully patched httpx SSL")
+        except ImportError:
+            logger.debug("httpx not available, skipping httpx SSL patch")
+        except Exception as e:
+            logger.debug(f"Could not patch httpx: {e}")
 
     def _patch_urllib3(self):
         """Monkey patch urllib3 to disable SSL verification."""
@@ -60,8 +100,9 @@ class HistoricalDataService:
             original_init = urllib3.PoolManager.__init__
 
             def patched_init(self, *args, **kwargs):
+                # Force disable SSL verification
                 kwargs['cert_reqs'] = 'CERT_NONE'
-                kwargs.pop('assert_hostname', None)
+                kwargs['assert_hostname'] = False
                 return original_init(self, *args, **kwargs)
 
             urllib3.PoolManager.__init__ = patched_init
@@ -76,6 +117,7 @@ class HistoricalDataService:
             original_request = requests.Session.request
 
             def patched_request(self, method, url, **kwargs):
+                # Force disable SSL verification for all requests
                 kwargs['verify'] = False
                 return original_request(self, method, url, **kwargs)
 
@@ -128,60 +170,75 @@ class HistoricalDataService:
 
     @timed_operation("historical_data_fetch")
     def fetch_historical_data(self, stock_code: str, start_date: Optional[str] = None,
-                            end_date: Optional[str] = None) -> Optional[pd.DataFrame]:
+                            end_date: Optional[str] = None, max_retries: int = 3) -> Optional[pd.DataFrame]:
         """Fetch historical data for a specific stock.
 
         Args:
             stock_code: Stock code to fetch data for
             start_date: Start date in YYYYMMDD format (optional)
             end_date: End date in YYYYMMDD format (optional)
+            max_retries: Maximum number of retry attempts for SSL failures
 
         Returns:
             DataFrame with historical data or None if failed
         """
-        try:
-            logger.info(f"Fetching historical data for {stock_code} from {start_date} to {end_date}")
+        import time
+        import ssl
 
-            # Use akshare to fetch historical data
-            df = ak.stock_zh_a_hist(
-                symbol=stock_code,
-                period="daily",
-                start_date=start_date or "19700101",
-                end_date=end_date or "21000101",
-                adjust=""
-            )
+        for attempt in range(max_retries + 1):
+            try:
+                logger.info(f"Fetching historical data for {stock_code} from {start_date} to {end_date} (attempt {attempt + 1}/{max_retries + 1})")
 
-            if df is not None and not df.empty:
-                # Rename columns to match our schema
-                column_mapping = {
-                    '日期': 'date',
-                    '开盘': 'open_price',
-                    '收盘': 'close_price',
-                    '最高': 'high_price',
-                    '最低': 'low_price',
-                    '成交量': 'volume',
-                    '成交额': 'turnover',
-                    '振幅': 'amplitude',
-                    '涨跌幅': 'price_change_rate',
-                    '涨跌额': 'price_change',
-                    '换手率': 'turnover_rate'
-                }
+                # Use akshare to fetch historical data
+                df = ak.stock_zh_a_hist(
+                    symbol=stock_code,
+                    period="daily",
+                    start_date=start_date or "19700101",
+                    end_date=end_date or "21000101",
+                    adjust=""
+                )
 
-                df = df.rename(columns=column_mapping)
+                if df is not None and not df.empty:
+                    # Rename columns to match our schema
+                    column_mapping = {
+                        '日期': 'date',
+                        '开盘': 'open_price',
+                        '收盘': 'close_price',
+                        '最高': 'high_price',
+                        '最低': 'low_price',
+                        '成交量': 'volume',
+                        '成交额': 'turnover',
+                        '振幅': 'amplitude',
+                        '涨跌幅': 'price_change_rate',
+                        '涨跌额': 'price_change',
+                        '换手率': 'turnover_rate'
+                    }
 
-                # Ensure date column is datetime
-                if 'date' in df.columns:
-                    df['date'] = pd.to_datetime(df['date'])
+                    df = df.rename(columns=column_mapping)
 
-                logger.info(f"Successfully fetched {len(df)} records for {stock_code}")
-                return df
-            else:
-                logger.warning(f"No historical data found for {stock_code}")
+                    # Ensure date column is datetime
+                    if 'date' in df.columns:
+                        df['date'] = pd.to_datetime(df['date'])
+
+                    logger.info(f"Successfully fetched {len(df)} records for {stock_code}")
+                    return df
+                else:
+                    logger.warning(f"No historical data found for {stock_code}")
+                    return None
+
+            except ssl.SSLError as e:
+                if attempt < max_retries:
+                    wait_time = 2 ** attempt  # Exponential backoff: 1, 2, 4 seconds
+                    logger.warning(f"SSL error for {stock_code} (attempt {attempt + 1}): {e}. Retrying in {wait_time}s...")
+                    time.sleep(wait_time)
+                    continue
+                else:
+                    logger.error(f"SSL error for {stock_code} after {max_retries + 1} attempts: {e}")
+                    return None
+
+            except Exception as e:
+                logger.error(f"Failed to fetch historical data for {stock_code}: {e}")
                 return None
-
-        except Exception as e:
-            logger.error(f"Failed to fetch historical data for {stock_code}: {e}")
-            return None
 
     def _convert_row_to_values(self, stock_code: str, row) -> tuple:
         """Convert a DataFrame row to database values tuple.

@@ -3,7 +3,7 @@
 import pytest
 import tempfile
 import os
-from src.services.database_service import DatabaseService
+from services.database_service import DatabaseService
 
 
 class TestDatabaseInitializationContract:
@@ -31,7 +31,9 @@ class TestDatabaseInitializationContract:
         service = DatabaseService()
         # This should work with default path
         result = service.initialize_database()
-        assert result is True, "Database initialization with default path should succeed"
+        assert result is True, (
+            "Database initialization with default path should succeed"
+        )
 
         # Close connection
         service.db_connection.disconnect()
