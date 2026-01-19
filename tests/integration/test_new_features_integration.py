@@ -128,5 +128,4 @@ class TestNewFeaturesIntegration:
         industry = service._extract_from_html(html, r'行业：([^<\n]+)')
 
         assert title == "Test Title"
-        assert industry is not None  # Just check it's extracted, ignore encoding</content>
-<parameter name="file_path">tests/integration/test_new_features_integration.py
+        assert industry is not None  # Just check it's extracted, ignore encoding

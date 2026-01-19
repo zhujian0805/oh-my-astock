@@ -412,5 +412,4 @@ class TestNewDataModelContract:
         str_repr = str(press)
         # Should truncate title in display
         assert "Very Long Title That Should Be Truncated" in str_repr
-        assert "000001" in str_repr</content>
-<parameter name="file_path">tests/contract/test_new_data_models.py
+        assert "000001" in str_repr

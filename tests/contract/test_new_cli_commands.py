@@ -277,5 +277,4 @@ class TestNewCliCommandsContract:
             data = json.loads(result.output.strip())
             assert isinstance(data, dict)
         except json.JSONDecodeError:
-            pytest.fail("Command should output valid JSON even on failures")</content>
-<parameter name="file_path">tests/contract/test_new_cli_commands.py
+            pytest.fail("Command should output valid JSON even on failures")
