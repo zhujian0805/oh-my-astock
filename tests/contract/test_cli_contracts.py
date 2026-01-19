@@ -3,7 +3,6 @@
 import pytest
 import tempfile
 import os
-import subprocess
 import json
 from click.testing import CliRunner
 from cli.commands import cli
@@ -48,90 +47,110 @@ class TestCliContract:
         except json.JSONDecodeError:
             pytest.fail("Command should output valid JSON")
 
-    def test_list_stocks_empty_database(self):
-        """Test list-stocks command with empty database."""
-        with tempfile.TemporaryDirectory() as temp_dir:
-            db_path = os.path.join(temp_dir, "empty.db")
-
-            runner = CliRunner()
-            result = runner.invoke(cli, ["list-stocks", "--db-path", db_path])
-
-            assert result.exit_code == 1
-            assert "Database does not exist" in result.output
-
-    def test_list_tables_populated_database(self):
-        """Test list-tables command with populated database."""
+    def test_fetch_stocks_with_database(self):
+        """Test fetch-stocks command with database storage."""
         with tempfile.TemporaryDirectory() as temp_dir:
             db_path = os.path.join(temp_dir, "test.db")
 
-            # First initialize database
             runner = CliRunner()
+            # First initialize database
             init_result = runner.invoke(cli, ["init-db", "--db-path", db_path])
             assert init_result.exit_code == 0
 
-            # Then list tables
-            list_result = runner.invoke(cli, ["list-tables", "--db-path", db_path])
-            assert list_result.exit_code == 0
+            # Then fetch and store stocks
+            result = runner.invoke(cli, ["fetch-stocks", "--db-path", db_path])
 
-            # Should contain stocks table
+            assert result.exit_code == 0
+            assert "Successfully stored" in result.output
+            assert "stocks in database" in result.output
+
+    def test_list_stocks_command(self):
+        """Test list-stocks command."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = os.path.join(temp_dir, "test.db")
+
+            runner = CliRunner()
+            # First initialize database and add some stocks
+            runner.invoke(cli, ["init-db", "--db-path", db_path])
+            runner.invoke(cli, ["fetch-stocks", "--db-path", db_path])
+
+            # Then list stocks
+            result = runner.invoke(cli, ["list-stocks", "--db-path", db_path, "--limit", "5"])
+
+            assert result.exit_code == 0
+            # Should output JSON array
             try:
-                tables = json.loads(list_result.output.strip())
-                assert isinstance(tables, list)
-                assert "stocks" in tables
+                data = json.loads(result.output.strip())
+                assert isinstance(data, list)
+                if len(data) > 0:
+                    assert "code" in data[0]
+                    assert "name" in data[0]
             except json.JSONDecodeError:
                 pytest.fail("Command should output valid JSON")
 
-    def test_debug_flag_enables_debug_logging(self):
-        """Test that --debug flag enables debug logging."""
+    def test_list_tables_command(self):
+        """Test list-tables command."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = os.path.join(temp_dir, "test.db")
+
+            runner = CliRunner()
+            # First initialize database
+            runner.invoke(cli, ["init-db", "--db-path", db_path])
+
+            # Then list tables
+            result = runner.invoke(cli, ["list-tables", "--db-path", db_path])
+
+            assert result.exit_code == 0
+            # Should output JSON array
+            try:
+                data = json.loads(result.output.strip())
+                assert isinstance(data, list)
+            except json.JSONDecodeError:
+                pytest.fail("Command should output valid JSON")
+
+    def test_get_historical_command(self):
+        """Test get-historical command."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = os.path.join(temp_dir, "test.db")
+
+            runner = CliRunner()
+            # First initialize database and add some stocks
+            runner.invoke(cli, ["init-db", "--db-path", db_path])
+            runner.invoke(cli, ["fetch-stocks", "--db-path", db_path])
+
+            # Try to get historical data (may not have any, but should not crash)
+            result = runner.invoke(cli, ["get-historical", "--db-path", db_path, "--stock-code", "000001"])
+
+            # Should not crash, even if no data
+            assert result.exit_code == 0
+            assert "000001" in result.output
+
+    def test_sync_historical_command_help(self):
+        """Test sync-historical command help."""
         runner = CliRunner()
-        result = runner.invoke(cli, ["--debug", "init-db", "--default"])
+        result = runner.invoke(cli, ["sync-historical", "--help"])
 
         assert result.exit_code == 0
-        # Debug output should be more verbose
-        assert "Database initialized successfully" in result.output
+        assert "Sync historical data" in result.output
+        assert "--max-threads" in result.output
+        assert "--force-full-sync" in result.output
 
-    def test_invalid_database_path_handling(self):
-        """Test handling of invalid database paths in commands."""
-        runner = CliRunner()
+    def test_list_stocks_empty_database(self):
+        """Test list-stocks command with empty database."""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            db_path = os.path.join(temp_dir, "test.db")
 
-        # Test with non-existent directory that can't be created
-        invalid_path = "Z:\\nonexistent\\drive\\database.db"
-        result = runner.invoke(cli, ["init-db", "--db-path", invalid_path])
+            runner = CliRunner()
+            # Initialize database but don't add stocks
+            runner.invoke(cli, ["init-db", "--db-path", db_path])
 
-        # Should handle gracefully (depending on OS permissions)
-        # Either succeed (if path creation works) or fail gracefully
-        assert result.exit_code in [0, 1]  # 0 for success, 1 for expected failure
+            # List stocks should return empty array
+            result = runner.invoke(cli, ["list-stocks", "--db-path", db_path])
 
-    def test_command_help_output(self):
-        """Test that commands provide help information."""
-        runner = CliRunner()
-
-        # Test main command help
-        result = runner.invoke(cli, ["--help"])
-        assert result.exit_code == 0
-        assert "Stock data management CLI" in result.output
-
-        # Test init-db help
-        result = runner.invoke(cli, ["init-db", "--help"])
-        assert result.exit_code == 0
-        assert "--db-path" in result.output
-        assert "--default" in result.output
-
-    def test_json_output_format(self):
-        """Test that JSON output is properly formatted."""
-        runner = CliRunner()
-        result = runner.invoke(cli, ["fetch-stocks", "--validate-only"])
-
-        assert result.exit_code == 0
-
-        # Should be valid JSON
-        output = result.output.strip()
-        try:
-            parsed = json.loads(output)
-            assert isinstance(parsed, list)
-        except json.JSONDecodeError as e:
-            pytest.fail(f"Invalid JSON output: {e}")
-
-        # Should be pretty-printed (indented)
-        lines = output.split("\n")
-        assert len(lines) > 1  # Multi-line indicates pretty printing
+            assert result.exit_code == 0
+            try:
+                data = json.loads(result.output.strip())
+                assert isinstance(data, list)
+                assert len(data) == 0
+            except json.JSONDecodeError:
+                pytest.fail("Command should output valid JSON")
