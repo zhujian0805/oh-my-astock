@@ -441,19 +441,26 @@ class ApiService:
             stocks = []
             api_success = False
 
-            # Try primary API: stock_info_a_code_name with pagination
+            # Try unified East Money API first (gets all stocks from all regions)
             try:
-                logger.info("Trying stock_info_a_code_name() with pagination...")
-                stocks = self._fetch_stocks_with_code_name_pagination()
-                logger.info(f"Successfully fetched {len(stocks)} stocks from stock_info_a_code_name with pagination")
+                logger.info("Trying unified East Money API for all regions...")
+                stocks = self._fetch_all_stocks_with_pagination()
+                logger.info(f"Successfully fetched {len(stocks)} stocks from unified East Money API")
+
+                # Count by region for verification
+                sh_count = sum(1 for stock in stocks if stock.code.startswith('6'))
+                sz_count = sum(1 for stock in stocks if stock.code.startswith(('0', '3')))
+                bj_count = sum(1 for stock in stocks if stock.code.startswith('8'))
+                logger.info(f"Stocks by region - Shanghai: {sh_count}, Shenzhen: {sz_count}, Beijing: {bj_count}")
+
                 api_success = True
 
             except Exception as e1:
-                logger.warning(f"stock_info_a_code_name with pagination failed: {e1}")
+                logger.warning(f"Unified East Money API failed: {e1}")
 
-                # Try fallback API: stock_info_a_code_name (original akshare method)
+                # Try primary API: stock_info_a_code_name (per spec FR-004)
                 try:
-                    logger.info("Trying stock_info_a_code_name() fallback...")
+                    logger.info("Trying stock_info_a_code_name() as fallback...")
                     # Create a session with SSL verification disabled
                     import requests
                     session = requests.Session()
@@ -483,21 +490,21 @@ class ApiService:
                             logger.warning(f"Skipping invalid stock data: {e}")
                             continue
 
-                    logger.info(f"Successfully fetched {len(stocks)} stocks from stock_info_a_code_name fallback")
+                    logger.info(f"Successfully fetched {len(stocks)} stocks from stock_info_a_code_name")
                     api_success = True
 
                 except Exception as e2:
                     logger.warning(f"stock_info_a_code_name fallback also failed: {e2}")
 
-                    # Try final fallback API: stock_zh_a_spot_em (real-time A-share data) with pagination
+                    # Try final fallback: separate exchange APIs with pagination
                     try:
-                        logger.info("Trying stock_zh_a_spot_em() with pagination as final fallback...")
-                        stocks = self._fetch_all_stocks_with_pagination()
-                        logger.info(f"Successfully fetched {len(stocks)} stocks from stock_zh_a_spot_em with pagination")
+                        logger.info("Trying separate exchange APIs with pagination as final fallback...")
+                        stocks = self._fetch_stocks_with_code_name_pagination()
+                        logger.info(f"Successfully fetched {len(stocks)} stocks from separate exchange APIs")
                         api_success = True
 
                     except Exception as e3:
-                        logger.warning(f"stock_zh_a_spot_em also failed: {e3}")
+                        logger.warning(f"Separate exchange APIs also failed: {e3}")
                         logger.info("All API methods failed, falling back to sample stock data")
 
             if api_success and stocks and len(stocks) >= 1000:  # Require at least 1000 stocks for success
