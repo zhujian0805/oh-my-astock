@@ -15,7 +15,7 @@ from typing import Dict, Any
 @click.group()
 @click.option('--log-level', default='INFO', help='Logging level')
 @click.option('--log-file', default=None, help='Log file path')
-@click.option('--debug', is_flag=True, help='Enable full debug mode with performance metrics')
+@click.option('--debug', '-d', is_flag=True, help='Enable debug mode')
 def cli(log_level, log_file, debug):
     """Stock data management CLI."""
     if debug:
@@ -432,7 +432,7 @@ def get_historical(db_path, default_db, stock_code, start_date, end_date, limit,
 
 @cli.command()
 @click.argument('query')
-@click.option('--limit', default=10, type=int, help='Limit number of results to return')
+@click.option('--limit', '-l', default=10, type=int, help='Limit number of results to return')
 def search(query, limit):
     """Search for stocks by code, name, or pinyin."""
     logger = get_logger(__name__)
@@ -450,10 +450,14 @@ def search(query, limit):
         # Limit results
         results = results[:limit]
 
-        # Output as JSON
-        click.echo(json.dumps(results, indent=2, ensure_ascii=False))
-        click.echo(f"\nFound {len(results)} stocks")
+        # Output in table format like rains
+        for result in results:
+            # Using 'full_code' and 'name' from the search results
+            code = result.get('full_code', '')
+            name = result.get('name', '')
+            click.echo(f"{code:<8}\t{name}")
 
+        click.echo(f"\nFound {len(results)} stocks")
         return 0
 
     except Exception as e:
@@ -464,22 +468,43 @@ def search(query, limit):
 
 @cli.command()
 @click.argument('symbol')
-def quote(symbol):
+@click.option('--no-check', '-n', is_flag=True, help='Do not validate symbol format')
+@click.option('--realtime', '-r', is_flag=True, help='Enable real-time quote updates')
+@click.option('--multiline', '-m', is_flag=True, help='Multi-line display for real-time quotes (single symbol only)')
+def quote(symbol, no_check, realtime, multiline):
     """Get real-time quote for a stock."""
     logger = get_logger(__name__)
 
     try:
         sina_service = SinaFinanceService()
-        click.echo(f"Fetching real-time quote for {symbol}...")
 
-        quote_data = sina_service.get_quote(symbol)
+        # Handle multiple symbols (comma-separated)
+        symbols = [s.strip() for s in symbol.split(',')]
 
-        if not quote_data:
-            click.echo(f"No quote data found for symbol {symbol}")
+        if realtime:
+            click.echo("Real-time quote functionality not yet implemented")
             return 1
+        else:
+            # Get quotes for all symbols
+            quotes = []
+            for sym in symbols:
+                click.echo(f"Fetching quote for {sym}...")
+                quote_data = sina_service.get_quote(sym)
+                if quote_data:
+                    quotes.append(quote_data.to_dict())
+                else:
+                    click.echo(f"Warning: Could not fetch quote for {sym}")
 
-        # Output as JSON
-        click.echo(json.dumps(quote_data.to_dict(), indent=2, ensure_ascii=False, default=str))
+            if not quotes:
+                click.echo("No quote data found")
+                return 1
+
+            # Output as JSON
+            if len(quotes) == 1:
+                click.echo(json.dumps(quotes[0], indent=2, ensure_ascii=False, default=str))
+            else:
+                click.echo(json.dumps(quotes, indent=2, ensure_ascii=False, default=str))
+
         return 0
 
     except Exception as e:
@@ -490,11 +515,12 @@ def quote(symbol):
 
 @cli.command()
 @click.argument('symbol')
-@click.option('--include-financials', is_flag=True, help='Include financial data')
-@click.option('--include-shareholders', is_flag=True, help='Include shareholder structure')
-@click.option('--include-dividends', is_flag=True, help='Include dividend history')
-@click.option('--include-press', is_flag=True, help='Include company announcements')
-def info(symbol, include_financials, include_shareholders, include_dividends, include_press):
+@click.option('--all', '-a', is_flag=True, help='Include all available information')
+@click.option('--financials', '-f', is_flag=True, help='Include financial data')
+@click.option('--structure', '-s', is_flag=True, help='Include shareholder structure')
+@click.option('--dividends', is_flag=True, help='Include dividend history')
+@click.option('--presses', '-p', is_flag=True, help='Include company announcements')
+def info(symbol, all, financials, structure, dividends, presses):
     """Get detailed information about a stock."""
     logger = get_logger(__name__)
 
@@ -507,6 +533,20 @@ def info(symbol, include_financials, include_shareholders, include_dividends, in
         # Get profile
         profile = sina_service.get_profile(symbol)
         if profile:
+            # Format profile output like rains
+            click.echo(click.style("基本信息", bold=True))
+            click.echo(f"证券代码\t{symbol}")
+            click.echo(f"公司名称\t{profile.name}")
+            if profile.listing_date:
+                click.echo(f"上市日期\t{profile.listing_date}")
+            if profile.industry:
+                click.echo(f"行业分类\t{profile.industry}")
+            if profile.business:
+                click.echo(f"主营业务\t{profile.business}")
+            if profile.website:
+                click.echo(f"公司网址\t{profile.website}")
+            if profile.address:
+                click.echo(f"办公地址\t{profile.address}")
             result['profile'] = profile.to_dict()
         else:
             click.echo("Warning: Could not fetch company profile")
@@ -514,33 +554,91 @@ def info(symbol, include_financials, include_shareholders, include_dividends, in
         # Get real-time quote
         quote_data = sina_service.get_quote(symbol)
         if quote_data:
+            click.echo(f"当前价格\t{quote_data.price or 'N/A'}")
+            if quote_data.price_change_rate is not None:
+                click.echo(f"涨跌幅\t{quote_data.price_change_rate:.2f}%")
             result['quote'] = quote_data.to_dict()
         else:
             click.echo("Warning: Could not fetch real-time quote")
 
         # Optional data
-        if include_financials:
-            financials = sina_service.get_financials(symbol)
-            if financials:
-                result['financials'] = [f.to_dict() for f in financials]
+        if all or financials:
+            financials_data = sina_service.get_financials(symbol)
+            if financials_data:
+                click.echo(f"\n{click.style('财务指标', bold=True)}")
+                # Format financials table - simplified version
+                cols = ["报告期", "营收", "净利润", "每股收益"]
+                for i, col in enumerate(cols):
+                    output = f"{col:<12}"
+                    for f in financials_data[:4]:  # Show last 4 periods
+                        match i:
+                            case 0:
+                                output += f"\t{f.period:<12}"
+                            case 1:
+                                revenue = f.revenue
+                                if revenue:
+                                    if revenue > 100_000_000:
+                                        output += f"\t{revenue/100_000_000:.2f}亿"
+                                    else:
+                                        output += f"\t{revenue/10_000:.2f}万"
+                                else:
+                                    output += "\tN/A"
+                            case 2:
+                                profit = f.net_profit
+                                if profit:
+                                    if profit > 100_000_000:
+                                        output += f"\t{profit/100_000_000:.2f}亿"
+                                    else:
+                                        output += f"\t{profit/10_000:.2f}万"
+                                else:
+                                    output += "\tN/A"
+                            case 3:
+                                eps = f.eps
+                                output += f"\t{eps:.2f}" if eps else "\tN/A"
+                    click.echo(output)
+                result['financials'] = [f.to_dict() for f in financials_data]
 
-        if include_shareholders:
-            structure = sina_service.get_shareholder_structure(symbol)
-            if structure:
-                result['shareholder_structure'] = structure.to_dict()
+        if all or structure:
+            structure_data = sina_service.get_shareholder_structure(symbol)
+            if structure_data:
+                click.echo(f"\n{click.style('股东结构', bold=True)}")
+                if structure_data.total_shareholders:
+                    click.echo(f"股东总数\t{structure_data.total_shareholders}")
+                if structure_data.top_10_shareholders:
+                    click.echo("十大股东")
+                    for i, sh in enumerate(structure_data.top_10_shareholders[:10]):
+                        shares = sh.shares
+                        if shares > 100_000_000:
+                            shares_str = f"{shares/100_000_000:.2f}亿"
+                        else:
+                            shares_str = f"{shares/10_000:.2f}万"
+                        click.echo(f"{i+1}\t{sh.name}({sh.percentage:.1f}% {shares_str})")
+                result['shareholder_structure'] = structure_data.to_dict()
 
-        if include_dividends:
-            dividends = sina_service.get_dividends(symbol)
-            if dividends:
-                result['dividends'] = [d.to_dict() for d in dividends]
+        if all or dividends:
+            dividends_data = sina_service.get_dividends(symbol)
+            if dividends_data:
+                click.echo(f"\n{click.style('分红送配', bold=True)}")
+                click.echo("股权登记日 \t 除权除息日 \t 每股分红 \t 送股比例")
+                for d in dividends_data:
+                    record_date = d.record_date if d.record_date else "N/A"
+                    ex_date = d.ex_dividend_date if d.ex_dividend_date else "N/A"
+                    dividend = d.dividend_per_share if d.dividend_per_share else 0
+                    share_dividend = d.share_dividend if d.share_dividend else 0
+                    click.echo(f"{record_date} \t {ex_date} \t {dividend:.2f} \t {share_dividend:.2f}")
+                result['dividends'] = [d.to_dict() for d in dividends_data]
 
-        if include_press:
-            press = sina_service.get_press_releases(symbol)
-            if press:
-                result['press_releases'] = [p.to_dict() for p in press]
+        if all or presses:
+            press_data = sina_service.get_press_releases(symbol)
+            if press_data:
+                click.echo(f"\n{click.style('最新公告', bold=True)}")
+                for p in press_data:
+                    click.echo(f"{p.date}\t{p.title}\t{p.url}")
+                result['press_releases'] = [p.to_dict() for p in press_data]
 
-        # Output as JSON
-        click.echo(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+        # Only output JSON if no formatted output was shown
+        if not profile and not quote_data and not (all or financials or structure or dividends or presses):
+            click.echo(json.dumps(result, indent=2, ensure_ascii=False, default=str))
         return 0
 
     except Exception as e:

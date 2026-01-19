@@ -128,47 +128,43 @@ class SinaFinanceService:
             List of stock search results with code, name, market info
         """
         try:
-            # Sina search API
-            url = "https://suggest3.sinajs.cn/suggest/type=11,12,15,21,22,23,24,25,26,31,33,41"
-            params = {"key": quote(query)}
+            # Sina search API - construct URL like rains does
+            url = f"https://suggest3.sinajs.cn/suggest/type=11,12,15,21,22,23,24,25,26,31,33,41&key={quote(query)}"
 
-            response = self.session.get(url, params=params, timeout=10)
+            response = self.session.get(url, timeout=10)
             response.raise_for_status()
 
-            # Parse JSONP response
+            # Parse JSONP response like rains does
             content = response.text.strip()
-            if content.startswith('/*') and content.endswith('*/'):
-                # Remove JSONP comment wrapper
-                json_str = content[2:-2]
-                data = json.loads(json_str)
-            else:
-                data = json.loads(content)
-
             results = []
-            if data and len(data) > 1:
-                stocks_data = data[1].split(';') if data[1] else []
-                for stock_str in stocks_data:
-                    if not stock_str.strip():
-                        continue
-                    parts = stock_str.split(',')
-                    if len(parts) >= 3:
-                        code = parts[0]
-                        name = parts[1]
-                        market_type = parts[2]
 
-                        # Determine exchange from code
-                        exchange = self._get_exchange_from_code(code)
+            # Extract JSON content from quotes using regex (like rains)
+            import re
+            json_match = re.search(r'"([^"]*)"', content)
+            if json_match:
+                matched = json_match.group(1)
+                if matched:
+                    # Parse the CSV data
+                    stocks_data = matched.split(';')
+                    for stock_str in stocks_data:
+                        if not stock_str.strip():
+                            continue
+                        parts = stock_str.split(',')
+                        if len(parts) >= 3:
+                            code = parts[0]
+                            name = parts[1]
+                            market_type = parts[2]
 
-                        results.append({
-                            'code': code,
-                            'name': name,
-                            'market_type': market_type,
-                            'exchange': exchange,
-                            'full_code': f"{exchange}{code}"
-                        })
+                            # Determine exchange from code
+                            exchange = self._get_exchange_from_code(code)
 
-            logger.info(f"Found {len(results)} stocks for query '{query}'")
-            return results
+                            results.append({
+                                'code': code,
+                                'name': name,
+                                'market_type': market_type,
+                                'exchange': exchange,
+                                'full_code': f"{exchange}{code}"
+                            })
 
         except Exception as e:
             logger.error(f"Failed to search stocks for query '{query}': {e}")
