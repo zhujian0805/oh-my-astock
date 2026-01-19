@@ -4,6 +4,7 @@ import click
 from services.database_service import DatabaseService
 from services.api_service import ApiService
 from services.historical_data_service import HistoricalDataService
+from services.sina_finance_service import SinaFinanceService
 from lib.config import Config
 from lib.logging import setup_logging, get_logger
 import json
@@ -426,4 +427,123 @@ def get_historical(db_path, default_db, stock_code, start_date, end_date, limit,
     except Exception as e:
         logger.error(f"Failed to get historical data: {e}", exc_info=True)
         click.echo(f"Failed to get historical data: {e}", err=True)
+        return 1
+
+
+@cli.command()
+@click.argument('query')
+@click.option('--limit', default=10, type=int, help='Limit number of results to return')
+def search(query, limit):
+    """Search for stocks by code, name, or pinyin."""
+    logger = get_logger(__name__)
+
+    try:
+        sina_service = SinaFinanceService()
+        click.echo(f"Searching for stocks matching '{query}'...")
+
+        results = sina_service.search_stocks(query)
+
+        if not results:
+            click.echo("No stocks found matching the query.")
+            return 1
+
+        # Limit results
+        results = results[:limit]
+
+        # Output as JSON
+        click.echo(json.dumps(results, indent=2, ensure_ascii=False))
+        click.echo(f"\nFound {len(results)} stocks")
+
+        return 0
+
+    except Exception as e:
+        logger.error(f"Search failed: {e}", exc_info=True)
+        click.echo(f"Search failed: {e}", err=True)
+        return 1
+
+
+@cli.command()
+@click.argument('symbol')
+def quote(symbol):
+    """Get real-time quote for a stock."""
+    logger = get_logger(__name__)
+
+    try:
+        sina_service = SinaFinanceService()
+        click.echo(f"Fetching real-time quote for {symbol}...")
+
+        quote_data = sina_service.get_quote(symbol)
+
+        if not quote_data:
+            click.echo(f"No quote data found for symbol {symbol}")
+            return 1
+
+        # Output as JSON
+        click.echo(json.dumps(quote_data.to_dict(), indent=2, ensure_ascii=False, default=str))
+        return 0
+
+    except Exception as e:
+        logger.error(f"Quote fetch failed: {e}", exc_info=True)
+        click.echo(f"Quote fetch failed: {e}", err=True)
+        return 1
+
+
+@cli.command()
+@click.argument('symbol')
+@click.option('--include-financials', is_flag=True, help='Include financial data')
+@click.option('--include-shareholders', is_flag=True, help='Include shareholder structure')
+@click.option('--include-dividends', is_flag=True, help='Include dividend history')
+@click.option('--include-press', is_flag=True, help='Include company announcements')
+def info(symbol, include_financials, include_shareholders, include_dividends, include_press):
+    """Get detailed information about a stock."""
+    logger = get_logger(__name__)
+
+    try:
+        sina_service = SinaFinanceService()
+        click.echo(f"Fetching information for {symbol}...")
+
+        result = {}
+
+        # Get profile
+        profile = sina_service.get_profile(symbol)
+        if profile:
+            result['profile'] = profile.to_dict()
+        else:
+            click.echo("Warning: Could not fetch company profile")
+
+        # Get real-time quote
+        quote_data = sina_service.get_quote(symbol)
+        if quote_data:
+            result['quote'] = quote_data.to_dict()
+        else:
+            click.echo("Warning: Could not fetch real-time quote")
+
+        # Optional data
+        if include_financials:
+            financials = sina_service.get_financials(symbol)
+            if financials:
+                result['financials'] = [f.to_dict() for f in financials]
+
+        if include_shareholders:
+            structure = sina_service.get_shareholder_structure(symbol)
+            if structure:
+                result['shareholder_structure'] = structure.to_dict()
+
+        if include_dividends:
+            dividends = sina_service.get_dividends(symbol)
+            if dividends:
+                result['dividends'] = [d.to_dict() for d in dividends]
+
+        if include_press:
+            press = sina_service.get_press_releases(symbol)
+            if press:
+                result['press_releases'] = [p.to_dict() for p in press]
+
+        # Output as JSON
+        click.echo(json.dumps(result, indent=2, ensure_ascii=False, default=str))
+        return 0
+
+    except Exception as e:
+        logger.error(f"Info fetch failed: {e}", exc_info=True)
+        click.echo(f"Info fetch failed: {e}", err=True)
         return 1
