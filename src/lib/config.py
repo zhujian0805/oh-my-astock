@@ -1,6 +1,7 @@
 """Configuration utilities."""
 
 import os
+import platform
 from pathlib import Path
 from typing import Optional
 
@@ -12,6 +13,11 @@ class Config:
     def get_database_path(db_path: Optional[str] = None) -> Path:
         """Get database path, using default if none provided.
 
+        Priority order:
+        1. Custom path provided via db_path parameter
+        2. Environment variable ASTOCK_DB_PATH
+        3. Default: ./stock.duckdb (in current working directory)
+
         Args:
             db_path: Custom database path
 
@@ -21,9 +27,13 @@ class Config:
         if db_path:
             return Path(db_path)
 
-        # Default database path
-        default_path = os.getenv("ASTOCK_DB_PATH", "d:\\duckdb\\stock.duckdb")
-        return Path(default_path)
+        # Check environment variable first
+        env_path = os.getenv("ASTOCK_DB_PATH")
+        if env_path:
+            return Path(env_path)
+
+        # Default path in current working directory (all platforms)
+        return Path.cwd() / "stock.duckdb"
 
     @staticmethod
     def ensure_path_exists(db_path: str) -> None:

@@ -25,83 +25,101 @@ pip install -e .
 
 ## Quick Start
 
-### 1. Initialize Database
+Get started with oh-my-astock in 3 simple steps:
+
+### 🚀 Essential 3-Step Workflow
 
 ```bash
-# Initialize with default path (d:\duckdb\stock.duckdb)
+# Step 1: Create your database
 stocklib init-db --default
+# Creates stock.duckdb in your current working directory
 
-# Or specify custom path
-stocklib init-db --db-path /path/to/stocks.db
-```
-
-### 2. Fetch Stock Information
-
-```bash
-# Fetch and store all stocks from Chinese exchanges
+# Step 2: Fetch all available stocks (~4000+ stocks from CN exchanges)
 stocklib fetch-stocks --default-db
 
-# Just validate data without storing
-stocklib fetch-stocks --validate-only
+# Step 3: Sync historical data (smart incremental sync with parallel processing)
+stocklib sync-historical --default-db --all-stocks --max-threads 20
 ```
 
-### 3. Sync Historical Data
+That's it! You now have a complete Chinese stock database with historical data.
+
+### 📊 Query Your Data
 
 ```bash
-# Smart sync historical data for all stocks (recommended)
-stocklib sync-historical --default-db --all-stocks
+# View all stocks in your database
+stocklib list-stocks --default-db --limit 10
 
-# Sync specific stocks
+# Get historical data for specific stock (e.g., Ping An Bank - 000001)
+stocklib get-historical --default-db --stock-code "000001" --start-date "2024-01-01"
+
+# Get real-time quote
+stocklib quote --stock-codes "000001,600036"
+
+# Search stocks by name or code
+stocklib search --default-db --query "银行"
+```
+
+### 🎯 Advanced Usage
+
+#### Initialize Custom Database Location
+```bash
+# Absolute paths
+stocklib init-db --db-path /path/to/stocks.db
+stocklib init-db --db-path ~/data/stocks.db
+
+# Relative paths (from current directory)
+stocklib init-db --db-path ./data/stocks.db
+stocklib init-db --db-path data/stocks.db
+```
+
+#### Selective Stock Sync
+```bash
+# Sync only specific stocks
 stocklib sync-historical --default-db --stock-codes "000001,600036,000858"
 
-# Force full sync for specific stocks (overwrite existing data)
+# Force full re-sync (overwrite existing data)
 stocklib sync-historical --default-db --stock-codes "000001" --force-full-sync
 
-# Sync with parallel processing (default 10 threads)
-stocklib sync-historical --default-db --all-stocks --max-threads 20
-
-# Limit number of stocks to process
+# Limit number of stocks to process (useful for testing)
 stocklib sync-historical --default-db --all-stocks --limit 100
 ```
 
-### 4. Query Data
-
+#### Get Detailed Stock Information
 ```bash
-# List all stocks
-stocklib list-stocks --default-db
+# Fetch company profile and financial data
+stocklib info --stock-code "000001" --info-type profile
 
-# List first 10 stocks
-stocklib list-stocks --default-db --limit 10
+# Get dividend history
+stocklib info --stock-code "000001" --info-type dividends
 
-# Get historical data for a specific stock
-stocklib get-historical --default-db --stock-code "000001"
-
-# Get historical data with date filters
-stocklib get-historical --default-db --stock-code "000001" --start-date "2023-01-01" --end-date "2023-12-31"
-
-# Get recent data with limit
-stocklib get-historical --default-db --stock-code "000001" --limit 30
+# View shareholder structure
+stocklib info --stock-code "000001" --info-type structure
 ```
 
-### 5. Inspect Database
-
+#### Database Inspection
 ```bash
-# See all tables in the database
+# View all tables in your database
 stocklib list-tables --default-db
+
+# Check stock data coverage
+stocklib list-stocks --default-db
 ```
 
-### 6. Debug Mode
-
+#### Debug & Performance Monitoring
 ```bash
-# Enable debug logging and performance metrics
+# Enable debug mode with detailed logging and timing metrics
 stocklib --debug init-db --default
-
-# Debug fetch operation with timing information
 stocklib --debug fetch-stocks --validate-only
-
-# Debug historical data sync
 stocklib --debug sync-historical --default-db --stock-codes "000001"
 ```
+
+### 💡 Pro Tips
+
+- **Default DB Path**: Use `--default-db` flag to automatically use `stock.duckdb` in your current working directory
+- **Custom Location**: Set `ASTOCK_DB_PATH` environment variable to use a different default location
+- **Validate First**: Use `--validate-only` flag with `fetch-stocks` to test API connectivity without storing data
+- **Parallel Processing**: Adjust `--max-threads` (default: 10) based on your system capabilities and network
+- **Smart Sync**: The historical sync automatically detects gaps and only fetches missing data - no duplicates!
 
 ## Architecture
 

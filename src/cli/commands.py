@@ -483,23 +483,32 @@ def quote(symbol, no_check, realtime, multiline):
             click.echo("Real-time quote functionality not yet implemented")
             return 1
         else:
-            # Get quotes for all symbols like rains does
-            quotes = []
-            for sym in symbols:
-                click.echo(f"Fetching quote for {sym}...")
-                quote_data = sina_service.get_quote(sym)
-                if quote_data:
-                    quotes.append(quote_data)
-                else:
-                    click.echo(f"Warning: Could not fetch quote for {sym}")
+            # Get quotes for all symbols like rains does - call quotes() plural method
+            if no_check:
+                # Use symbols as-is without validation
+                symbols_list = symbols
+            else:
+                # Validate symbols like rains does
+                symbols_list = []
+                for sym in symbols:
+                    # For now, just add them - SinaFinanceService handles validation internally
+                    symbols_list.append(sym)
 
-            if not quotes:
-                click.echo("No quote data found")
+            if not symbols_list:
+                click.echo("No valid symbols to query")
                 return 1
 
-            # Output formatted like rains does
-            for quote in quotes:
-                write_quote_formatted(quote)
+            # Join symbols with comma like rains does
+            symbols_str = ','.join(symbols_list)
+
+            # Call quotes method (plural) like rains does
+            quotes = sina_service.get_quotes(symbols_str)
+            if quotes:
+                for quote in quotes:
+                    write_quote_formatted(quote)
+            else:
+                click.echo("No quote data found")
+                return 1
 
         return 0
 
@@ -527,54 +536,31 @@ def info(symbol, all, financials, structure, dividends, presses):
         # Get profile like rains does
         profile = sina_service.get_profile(symbol)
         if profile:
-            # Format output exactly like rains
+            # Format output exactly like rains - all fields shown unconditionally
             click.echo(click.style("基本信息", bold=True))
             click.echo(f"证券代码\t{symbol}")
-            if profile.used_name:  # Company name history
-                click.echo(f"简称历史\t{profile.used_name}")
+            click.echo(f"简称历史\t{profile.used_name or ''}")
             click.echo(f"公司名称\t{profile.name}")
-            if profile.listing_date:
-                click.echo(f"上市日期\t{profile.listing_date}")
-            if profile.listing_price:  # IPO price
-                click.echo(f"发行价格\t{profile.listing_price:.2f}")
-            if profile.industry:
-                click.echo(f"行业分类\t{profile.industry}")
-            if profile.business:
-                click.echo(f"主营业务\t{profile.business}")
-            if profile.address:  # Business address
-                click.echo(f"办公地址\t{profile.address}")
-            if profile.website:
-                click.echo(click.style(f"公司网址\t{profile.website}", underline=True))
+            click.echo(f"上市日期\t{profile.listing_date or ''}")
+            click.echo(f"发行价格\t{profile.listing_price:.2f}")
+            click.echo(f"行业分类\t{profile.industry or ''}")
+            click.echo(f"主营业务\t{profile.business or ''}")
+            click.echo(f"办公地址\t{profile.address or ''}")
+            click.echo(click.style(f"公司网址\t{profile.website or ''}", underline=True))
+            # Get price from quote like rains does
+            quote_data = sina_service.get_quote(symbol)
+            price = quote_data.price if quote_data else None
+            click.echo(f"当前价格\t{price:.2f}" if price else "当前价格\t")
+            click.echo(f"市净率PB\t{profile.pb_ratio:.2f}" if profile.pb_ratio else "市净率PB\t")
+            click.echo(f"市盈率TTM\t{profile.pe_ratio:.2f}" if profile.pe_ratio else "市盈率TTM\t")
+            # Format market cap like rains fmt_num function
+            market_cap_str = fmt_num(profile.market_cap) if profile.market_cap else " - "
+            traded_market_cap_str = fmt_num(profile.traded_market_cap) if profile.traded_market_cap else " - "
+
+            click.echo(f"总市值  \t{market_cap_str}")
+            click.echo(f"流通市值\t{traded_market_cap_str}")
         else:
             click.echo("Warning: Could not fetch company profile")
-
-        # Get current price from quote like rains does
-        quote_data = sina_service.get_quote(symbol)
-        if quote_data:
-            click.echo(f"当前价格\t{quote_data.price or 'N/A'}")
-            if quote_data.price_change_rate is not None:
-                click.echo(f"涨跌幅\t{quote_data.price_change_rate:.2f}%")
-        else:
-            # Quote fetching failed
-            click.echo("Warning: Could not fetch real-time quote")
-
-        # Add financial ratios like rains (show even if quote fails)
-        if profile:
-            if profile.pb_ratio is not None:
-                click.echo(f"市净率PB\t{profile.pb_ratio:.2f}")
-            if profile.pe_ratio is not None:
-                click.echo(f"市盈率TTM\t{profile.pe_ratio:.2f}")
-            if profile.market_cap is not None:
-                if profile.market_cap >= 100000000:  # Convert to billion yuan
-                    click.echo(f"总市值  \t{profile.market_cap/100000000:.2f}亿")
-                else:
-                    click.echo(f"总市值  \t{profile.market_cap/10000:.2f}万")
-            if profile.traded_market_cap and quote_data and quote_data.price:
-                traded_market_cap = profile.traded_market_cap
-                if traded_market_cap >= 100000000:  # Convert to billion yuan
-                    click.echo(f"流通市值\t{traded_market_cap/100000000:.2f}亿")
-                else:
-                    click.echo(f"流通市值\t{traded_market_cap/10000:.2f}万")
 
         # Optional data sections - simplified to match rains speed
         if all or financials:
@@ -626,7 +612,7 @@ def info(symbol, all, financials, structure, dividends, presses):
                         click.echo(f"平均持股\t{' '.join(shares)}")
                         click.echo("十大股东")
 
-                        for i, h in enumerate(structure_data.holders_ten):
+                        for i, h in enumerate(structure_data.holders_ten or []):
                             shares_fmt = f"{h.shares:,.0f}" if h.shares >= 10000 else f"{h.shares:.0f}"
                             click.echo(f"{i+1}\t{h.name}\t({h.percent:.1f}%) {shares_fmt}")
                 else:
@@ -682,6 +668,16 @@ def info(symbol, all, financials, structure, dividends, presses):
         return 1
 
 
+def fmt_num(num: float) -> str:
+    """Format number like rains fmt_num function."""
+    if num > 100_000_000.0:
+        return f"{num / 100_000_000.0:.2f}亿"
+    elif num == 0.0:
+        return " - "
+    else:
+        return f"{num / 10_000.0:.2f}万"
+
+
 def write_quote_formatted(quote):
     """Format and output quote data like rains does.
 
@@ -690,27 +686,37 @@ def write_quote_formatted(quote):
     """
     from datetime import datetime
 
-    # Calculate change rate and format price
+    # Calculate change rate and format price like rains does
     rate = (quote.price / quote.close_price - 1.0) * 100.0 if quote.close_price and quote.close_price != 0 else 0.0
     now = f"{quote.price:.2f} {rate:.2f}%"
 
-    # Format volume (convert to 万 if large)
+    # Format volume (HK stocks multiply by 1000 like rains does)
     volume = quote.volume
-    if volume and volume >= 10000:
-        volume_display = f"{volume/10000:.2f}万"
-    else:
-        volume_display = str(volume) if volume else "N/A"
+    if volume and 'HK' in quote.symbol:
+        volume = volume * 1000.0 if volume else None
 
-    # Format turnover (convert to 亿 if large)
+    # Format volume display like rains (using fmt_num logic)
+    if volume and volume >= 100000000:
+        volume_display = f"{volume/100000000:.2f}亿"
+    elif volume and volume == 0.0:
+        volume_display = " - "
+    else:
+        volume_display = f"{volume/10000:.2f}万" if volume else " - "
+
+    # Format turnover display like rains (using fmt_num logic)
     turnover = quote.turnover
     if turnover and turnover >= 100000000:
         turnover_display = f"{turnover/100000000:.2f}亿"
+    elif turnover and turnover == 0.0:
+        turnover_display = " - "
     else:
-        turnover_display = f"{turnover/10000:.2f}万" if turnover else "N/A"
+        turnover_display = f"{turnover/10000:.2f}万" if turnover else " - "
 
-    # Format output exactly like rains - with colors
-    # Note: Click doesn't have built-in color support like owo_colors in Rust,
-    # but we can use click.style for similar effect
+    # Use quote timestamp if available, otherwise current time like rains does
+    date_str = quote.timestamp.strftime('%Y-%m-%d') if quote.timestamp else datetime.now().strftime('%Y-%m-%d')
+    time_str = quote.timestamp.strftime('%H:%M:%S') if quote.timestamp else datetime.now().strftime('%H:%M:%S')
+
+    # Format output exactly like rains - with colors and spacing
     colored_now = now
     if rate > 0.0:
         colored_now = click.style(now, fg='red', bold=True, underline=True)
@@ -719,4 +725,5 @@ def write_quote_formatted(quote):
     else:
         colored_now = click.style(now, fg='bright_black', bold=True, underline=True)
 
-    click.echo(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  {quote.symbol}  {colored_now} \t昨收：{quote.close_price:.2f}\t今开：{quote.open_price:.2f}\t最高：{quote.high_price:.2f}\t最低：{quote.low_price:.2f}\t成交量：{volume_display}\t成交额：{turnover_display}\t{quote.name}")
+    # Exact formatting like rains: date time symbol(8 chars) price(16 chars) close open high low volume(8) turnover(8) name
+    click.echo(f"{date_str} {time_str}  {quote.symbol:<8}  {colored_now:<16} \t昨收：{quote.close_price:.2f}\t今开：{quote.open_price:.2f}\t最高：{quote.high_price:.2f}\t最低：{quote.low_price:.2f}\t成交量：{volume_display:<8}\t成交额：{turnover_display:<8}\t{quote.name}")

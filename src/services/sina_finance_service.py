@@ -298,6 +298,31 @@ class SinaFinanceService:
             logger.error(f"Failed to parse Sina quote data for {symbol}: {e}")
             return None
 
+    def get_quotes(self, symbols: str) -> List[Quote]:
+        """Get quotes for multiple symbols like rains does.
+
+        Args:
+            symbols: Comma-separated list of stock symbols
+
+        Returns:
+            List of Quote objects
+        """
+        try:
+            symbol_list = [s.strip() for s in symbols.split(',') if s.strip()]
+            quotes = []
+
+            for symbol in symbol_list:
+                quote = self.get_quote(symbol)
+                if quote:
+                    quotes.append(quote)
+
+            logger.info(f"Retrieved {len(quotes)} quotes for {len(symbol_list)} symbols")
+            return quotes
+
+        except Exception as e:
+            logger.error(f"Failed to get quotes for symbols {symbols}: {e}")
+            return []
+
     def _safe_int(self, value: str) -> Optional[int]:
         """Safely convert string to int."""
         try:
@@ -995,36 +1020,74 @@ class SinaFinanceService:
             # Find the press releases list like rains does (.datelist ul)
             ul = soup.select_one('div.datelist ul')
             if not ul:
-                logger.warning("Press releases list not found in HTML")
-                return []
+                logger.info("Press releases list not found in HTML. Checking for alternative selectors...")
+                # Try alternative selectors
+                ul = soup.select_one('.datelist ul') or soup.select_one('ul.datelist')
+                if not ul:
+                    logger.info("Press releases list not found in HTML with any selector")
+                    # Debug: show some HTML content around where we expect the data
+                    datelist_div = soup.select_one('div.datelist')
+                    if datelist_div:
+                        logger.info(f"Found datelist div, first 500 chars: {str(datelist_div)[:500]}")
+                    else:
+                        logger.info("No datelist div found at all")
+                        # Show a broader search for any ul elements that might contain press releases
+                        all_uls = soup.find_all('ul')
+                        logger.info(f"Found {len(all_uls)} ul elements total")
+                        for i, ul_elem in enumerate(all_uls[:3]):  # Check first 3 ul elements
+                            logger.info(f"UL {i}: classes={ul_elem.get('class')}, first 200 chars: {str(ul_elem)[:200]}")
+                    return []
+
+            # Find the press releases list like rains does (.datelist ul)
+            ul = soup.select_one('div.datelist ul')
+            if not ul:
+                logger.debug("Press releases list not found in HTML. Checking for alternative selectors...")
+                # Try alternative selectors
+                ul = soup.select_one('.datelist ul') or soup.select_one('ul.datelist')
+                if not ul:
+                    logger.info("Press releases list not found in HTML with any selector")
+                    # Debug: show some HTML content around where we expect the data
+                    datelist_div = soup.select_one('div.datelist')
+                    if datelist_div:
+                        logger.debug(f"Found datelist div, first 500 chars: {str(datelist_div)[:500]}")
+                    else:
+                        logger.debug("No datelist div found at all")
+                        # Show a broader search for any ul elements that might contain press releases
+                        all_uls = soup.find_all('ul')
+                        logger.debug(f"Found {len(all_uls)} ul elements total")
+                        for i, ul_elem in enumerate(all_uls[:3]):  # Check first 3 ul elements
+                            logger.debug(f"UL {i}: classes={ul_elem.get('class')}, first 200 chars: {str(ul_elem)[:200]}")
+                    return []
 
             presses = []
 
-            # Parse list items like rains does (3 items per press release: date, link+title, empty)
+            # The actual structure is: <a>title</a>, <br/>, <a>title</a>, <br/>, ...
+            # Each press release is just the link, no separate date
             items = ul.find_all(recursive=False)
-            current_press = None
+            i = 0
+            while i < len(items):
+                item = items[i]
 
-            for i, item in enumerate(items):
-                match i % 3:
-                    case 0:  # Date
-                        if current_press:
-                            presses.append(current_press)
-                        current_press = Press(
-                            date=item.get_text().strip(),
-                            title="",
-                            url=""
-                        )
+                # Check if this is a link (press release)
+                if item.name == 'a' and item.get('href'):
+                    title = item.get_text().strip()
+                    url = f"https://vip.stock.finance.sina.com.cn{item.get('href')}"
 
-                    case 1:  # Link and title
-                        if current_press:
-                            link = item.find('a')
-                            if link:
-                                current_press.url = f"https://vip.stock.finance.sina.com.cn{link.get('href')}"
-                                current_press.title = link.get_text().strip()
+                    if title:
+                        try:
+                            # Create press with empty date since it's not in the HTML
+                            press = Press(
+                                date=None,  # No date available in this format
+                                title=title,
+                                url=url
+                            )
+                            presses.append(press)
+                        except ValueError as e:
+                            logger.warning(f"Failed to create Press object: {e}")
+                            # Continue processing other items
 
-            # Add the last press release
-            if current_press:
-                presses.append(current_press)
+                # Skip the <br/> that follows each link
+                i += 2
 
             return presses
 

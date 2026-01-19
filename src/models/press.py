@@ -1,5 +1,3 @@
-"""Company press/announcement data model."""
-
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
 
@@ -9,17 +7,17 @@ class Press:
     """Company announcement/press release information like rains."""
 
     # Match rains Press struct exactly
-    date: str
+    date: Optional[str]
     title: str
     url: str
 
     def __post_init__(self):
         """Validate press data after initialization."""
-        if not self.date or not isinstance(self.date, str):
-            raise ValueError("Press date must be a non-empty string")
+        if self.date is not None and not isinstance(self.date, str):
+            raise ValueError("Press date must be a string or None")
         if not self.title or not isinstance(self.title, str):
             raise ValueError("Press title must be a non-empty string")
-        self.date = self.date.strip()
+        self.date = self.date.strip() if self.date else ""
         self.title = self.title.strip()
         self.url = self.url.strip()
 
