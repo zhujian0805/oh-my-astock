@@ -255,38 +255,226 @@ class SinaFinanceService:
             Profile object or None if failed
         """
         try:
-            # Normalize symbol to code only
+            # Configure SSL for akshare
+            self._configure_akshare_ssl()
+
+            import akshare as ak
+            import pandas as pd
+
+            # Normalize symbol to 6-digit code
+            code = symbol.lstrip('SH').lstrip('SZ').lstrip('BJ').zfill(6)
+
+            profile_data = {
+                'symbol': symbol,
+                'name': symbol,
+                'english_name': None,
+                'industry': None,
+                'business': None,
+                'market_cap': None,
+                'pe_ratio': None,
+                'pb_ratio': None,
+                'eps': None,
+                'bps': None,
+                'total_shares': None,
+                'circulating_shares': None,
+                'website': None,
+                'address': None,
+                'phone': None,
+                'listing_date': None
+            }
+
+            # Try to get basic individual stock info
+            try:
+                df_basic = ak.stock_individual_info_em(code)
+                if not df_basic.empty:
+                    row = df_basic.iloc[0] if len(df_basic) > 0 else {}
+
+                    # Extract basic information
+                    profile_data['name'] = str(row.get('股票简称', symbol))
+                    profile_data['industry'] = str(row.get('行业', '')) if row.get('行业') else None
+                    profile_data['total_shares'] = float(row.get('总股本', 0)) if pd.notna(row.get('总股本')) else None
+                    profile_data['circulating_shares'] = float(row.get('流通股', 0)) if pd.notna(row.get('流通股')) else None
+                    profile_data['market_cap'] = float(row.get('总市值', 0)) if pd.notna(row.get('总市值')) else None
+
+                    # Try to get listing date
+                    if row.get('上市时间'):
+                        try:
+                            listing_date_str = str(row.get('上市时间', ''))
+                            if listing_date_str and listing_date_str != 'None':
+                                profile_data['listing_date'] = pd.to_datetime(listing_date_str).date()
+                        except:
+                            pass
+
+                    logger.debug(f"Retrieved basic info for {symbol} using akshare")
+            except Exception as e:
+                logger.warning(f"Failed to get basic info for {symbol}: {e}")
+                # Continue to other sources instead of failing
+
+            # Skip slow akshare calls and go directly to Sina fallback for better performance
+            # Fall back to Sina scraping
+            logger.info(f"Falling back to Sina scraping for {symbol}")
             code = self._normalize_symbol(symbol).replace('SH', '').replace('SZ', '').replace('BJ', '')
 
             # Sina company profile page
             url = f"https://vip.stock.finance.sina.com.cn/corp/go.php/vCI_CorpInfo/stockid/{code}.phtml"
 
-            response = self.session.get(url, timeout=10)
-            response.raise_for_status()
+            try:
+                response = self.session.get(url, timeout=10)
+                response.raise_for_status()
 
-            # Parse HTML content (simplified scraping)
-            html_content = response.text
+                # Handle gb2312 encoding for Sina pages
+                if response.encoding != 'utf-8':
+                    response.encoding = 'gb2312'
+                    html_content = response.text
+                else:
+                    html_content = response.text
 
-            # Extract basic information using regex patterns
-            name = self._extract_from_html(html_content, r'<title>([^<]+)</title>')
-            if not name:
-                name = symbol
+                # Extract basic information using regex patterns
+                name = self._extract_from_html(html_content, r'<title>([^<]+)</title>')
+                if name:
+                    # Clean up the title (remove extra text)
+                    name = name.replace('公司资料_新浪财经_新浪网', '').strip()
+                    if not profile_data['name'] or profile_data['name'] == symbol:
+                        profile_data['name'] = name
 
-            listing_date = self._extract_listing_date(html_content)
-            industry = self._extract_from_html(html_content, r'行业：([^<\n]+)')
-            business = self._extract_business_description(html_content)
+                # Extract listing date
+                if not profile_data['listing_date']:
+                    profile_data['listing_date'] = self._extract_listing_date(html_content)
 
-            # Financial ratios (these would require more complex scraping)
-            # For now, return basic profile
+                # Extract industry
+                if not profile_data['industry']:
+                    profile_data['industry'] = self._extract_from_html(html_content, r'行业[：:]\s*([^<\n]+)')
+
+                # Extract business description
+                if not profile_data['business']:
+                    profile_data['business'] = self._extract_business_description(html_content)
+
+                # Extract additional information from Sina page
+                # Try to extract market cap
+                if not profile_data['market_cap']:
+                    market_cap_match = re.search(r'总市值[：:]\s*([0-9,]+\.?\d*)\s*(亿|万)?', html_content, re.IGNORECASE)
+                    if market_cap_match:
+                        try:
+                            value = float(market_cap_match.group(1).replace(',', ''))
+                            unit = market_cap_match.group(2)
+                            if unit == '亿':
+                                value *= 100000000  # Convert to yuan
+                            elif unit == '万':
+                                value *= 10000
+                            profile_data['market_cap'] = value
+                        except (ValueError, IndexError):
+                            pass
+
+                # Try to extract PE ratio
+                if not profile_data['pe_ratio']:
+                    pe_match = re.search(r'市盈率[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
+                    if pe_match:
+                        try:
+                            profile_data['pe_ratio'] = float(pe_match.group(1).replace(',', ''))
+                        except (ValueError, IndexError):
+                            pass
+
+                # Try to extract PB ratio
+                if not profile_data['pb_ratio']:
+                    pb_match = re.search(r'市净率[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
+                    if pb_match:
+                        try:
+                            profile_data['pb_ratio'] = float(pb_match.group(1).replace(',', ''))
+                        except (ValueError, IndexError):
+                            pass
+
+                # Try to extract EPS
+                if not profile_data['eps']:
+                    eps_match = re.search(r'每股收益[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
+                    if eps_match:
+                        try:
+                            profile_data['eps'] = float(eps_match.group(1).replace(',', ''))
+                        except (ValueError, IndexError):
+                            pass
+
+                # Try to extract BPS
+                if not profile_data['bps']:
+                    bps_match = re.search(r'每股净资产[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
+                    if bps_match:
+                        try:
+                            profile_data['bps'] = float(bps_match.group(1).replace(',', ''))
+                        except (ValueError, IndexError):
+                            pass
+
+                # Try to extract total shares
+                if not profile_data['total_shares']:
+                    total_shares_match = re.search(r'总股本[：:]\s*([0-9,]+\.?\d*)\s*(亿|万)?', html_content, re.IGNORECASE)
+                    if total_shares_match:
+                        try:
+                            value = float(total_shares_match.group(1).replace(',', ''))
+                            unit = total_shares_match.group(2)
+                            if unit == '亿':
+                                value *= 100000000  # Convert to shares
+                            elif unit == '万':
+                                value *= 10000
+                            profile_data['total_shares'] = value
+                        except (ValueError, IndexError):
+                            pass
+
+                # Try to extract circulating shares
+                if not profile_data['circulating_shares']:
+                    circ_shares_match = re.search(r'流通股[：:]\s*([0-9,]+\.?\d*)\s*(亿|万)?', html_content, re.IGNORECASE)
+                    if circ_shares_match:
+                        try:
+                            value = float(circ_shares_match.group(1).replace(',', ''))
+                            unit = circ_shares_match.group(2)
+                            if unit == '亿':
+                                value *= 100000000  # Convert to shares
+                            elif unit == '万':
+                                value *= 10000
+                            profile_data['circulating_shares'] = value
+                        except (ValueError, IndexError):
+                            pass
+
+                # Try to extract website
+                if not profile_data['website']:
+                    website_match = re.search(r'网站[：:]\s*(https?://[^\s<]+)', html_content, re.IGNORECASE)
+                    if website_match:
+                        profile_data['website'] = website_match.group(1).strip()
+
+                # Try to extract address
+                if not profile_data['address']:
+                    address_match = re.search(r'地址[：:]\s*([^<\n]+)', html_content, re.IGNORECASE)
+                    if address_match:
+                        profile_data['address'] = address_match.group(1).strip()
+
+                # Try to extract phone
+                if not profile_data['phone']:
+                    phone_match = re.search(r'电话[：:]\s*([^<\n]+)', html_content, re.IGNORECASE)
+                    if phone_match:
+                        profile_data['phone'] = phone_match.group(1).strip()
+
+                logger.info(f"Retrieved enhanced profile for {symbol} using Sina fallback")
+
+            except Exception as e:
+                logger.warning(f"Sina scraping also failed for {symbol}: {e}")
+
+            # Create Profile object with collected data
             profile = Profile(
-                symbol=symbol,
-                name=name,
-                listing_date=listing_date,
-                industry=industry,
-                business=business
+                symbol=profile_data['symbol'],
+                name=profile_data['name'],
+                english_name=profile_data['english_name'],
+                listing_date=profile_data['listing_date'],
+                industry=profile_data['industry'],
+                business=profile_data['business'],
+                market_cap=profile_data['market_cap'],
+                pe_ratio=profile_data['pe_ratio'],
+                pb_ratio=profile_data['pb_ratio'],
+                eps=profile_data['eps'],
+                bps=profile_data['bps'],
+                total_shares=profile_data['total_shares'],
+                circulating_shares=profile_data['circulating_shares'],
+                website=profile_data['website'],
+                address=profile_data['address'],
+                phone=profile_data['phone']
             )
 
-            logger.info(f"Retrieved profile for {symbol}: {profile}")
+            logger.info(f"Retrieved comprehensive profile for {symbol}: {profile}")
             return profile
 
         except Exception as e:
@@ -464,11 +652,12 @@ class SinaFinanceService:
         Returns:
             Listing date or None
         """
-        # Look for date patterns in Chinese format
+        # Look for date patterns in Chinese format - be more specific to avoid false matches
         patterns = [
             r'上市日期[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日',
-            r'(\d{4})年(\d{1,2})月(\d{1,2})日上市',
-            r'(\d{4})-(\d{1,2})-(\d{1,2})'
+            r'上市时间[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日',
+            r'(\d{4})年(\d{1,2})月(\d{1,2})日.*上市',
+            r'成立日期[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日'
         ]
 
         for pattern in patterns:
@@ -478,7 +667,16 @@ class SinaFinanceService:
                     year = int(match.group(1))
                     month = int(match.group(2))
                     day = int(match.group(3))
-                    return date(year, month, day)
+
+                    # Skip obviously wrong dates (like future dates or very old dates)
+                    from datetime import date as date_class
+                    today = date_class.today()
+                    parsed_date = date_class(year, month, day)
+
+                    if parsed_date > today or year < 1990:
+                        continue
+
+                    return parsed_date
                 except (ValueError, IndexError):
                     continue
 

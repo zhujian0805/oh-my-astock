@@ -253,5 +253,4 @@ class TestSinaFinanceServiceContract:
         press = service.get_press_releases("000001")
 
         assert isinstance(press, list)
-        assert len(press) == 0</content>
-<parameter name="file_path">tests/contract/test_sina_finance_service.py
+        assert len(press) == 0
