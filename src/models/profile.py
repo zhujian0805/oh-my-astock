@@ -12,18 +12,21 @@ class Profile:
     symbol: str
     name: str
     english_name: Optional[str] = None
+    used_name: Optional[str] = None       # Company name history
     listing_date: Optional[date] = None
+    listing_price: Optional[float] = None # IPO price
     industry: Optional[str] = None
     business: Optional[str] = None
-    market_cap: Optional[float] = None  # Market capitalization
-    pe_ratio: Optional[float] = None    # Price-to-earnings ratio
-    pb_ratio: Optional[float] = None    # Price-to-book ratio
-    eps: Optional[float] = None         # Earnings per share
-    bps: Optional[float] = None         # Book value per share
-    total_shares: Optional[int] = None  # Total shares outstanding
+    market_cap: Optional[float] = None    # Market capitalization
+    traded_market_cap: Optional[float] = None  # Circulating market cap
+    pe_ratio: Optional[float] = None      # Price-to-earnings ratio
+    pb_ratio: Optional[float] = None      # Price-to-book ratio
+    eps: Optional[float] = None           # Earnings per share
+    bps: Optional[float] = None           # Book value per share
+    total_shares: Optional[int] = None    # Total shares outstanding
     circulating_shares: Optional[int] = None  # Circulating shares
     website: Optional[str] = None
-    address: Optional[str] = None
+    address: Optional[str] = None         # Business address
     phone: Optional[str] = None
 
     def __post_init__(self):
@@ -41,9 +44,12 @@ class Profile:
             "symbol": self.symbol,
             "name": self.name,
             "english_name": self.english_name,
+            "used_name": self.used_name,
+            "listing_price": self.listing_price,
             "industry": self.industry,
             "business": self.business,
             "market_cap": self.market_cap,
+            "traded_market_cap": self.traded_market_cap,
             "pe_ratio": self.pe_ratio,
             "pb_ratio": self.pb_ratio,
             "eps": self.eps,
@@ -72,10 +78,13 @@ class Profile:
             symbol=data["symbol"],
             name=data["name"],
             english_name=data.get("english_name"),
+            used_name=data.get("used_name"),
             listing_date=listing_date,
+            listing_price=data.get("listing_price"),
             industry=data.get("industry"),
             business=data.get("business"),
             market_cap=data.get("market_cap"),
+            traded_market_cap=data.get("traded_market_cap"),
             pe_ratio=data.get("pe_ratio"),
             pb_ratio=data.get("pb_ratio"),
             eps=data.get("eps"),

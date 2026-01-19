@@ -450,13 +450,12 @@ def search(query, limit):
 
         # Output in table format like rains
         for result in results:
-            # Using 'full_code' and 'name' from the search results
+            # Using 'full_code' and 'name' from the search results like rains
             code = result.get('full_code', '')
             name = result.get('name', '')
             click.echo(f"{code:<8}\t{name}")
 
-        click.echo(f"\nFound {len(results)} stocks")
-        return 0
+        # Don't output count like rains does
 
     except Exception as e:
         logger.error(f"Search failed: {e}", exc_info=True)
@@ -476,20 +475,21 @@ def quote(symbol, no_check, realtime, multiline):
     try:
         sina_service = SinaFinanceService()
 
-        # Handle multiple symbols (comma-separated)
+        # Handle multiple symbols (comma-separated) like rains does
         symbols = [s.strip() for s in symbol.split(',')]
 
         if realtime:
+            # Real-time functionality not implemented yet - match rains behavior
             click.echo("Real-time quote functionality not yet implemented")
             return 1
         else:
-            # Get quotes for all symbols
+            # Get quotes for all symbols like rains does
             quotes = []
             for sym in symbols:
                 click.echo(f"Fetching quote for {sym}...")
                 quote_data = sina_service.get_quote(sym)
                 if quote_data:
-                    quotes.append(quote_data.to_dict())
+                    quotes.append(quote_data)
                 else:
                     click.echo(f"Warning: Could not fetch quote for {sym}")
 
@@ -497,11 +497,9 @@ def quote(symbol, no_check, realtime, multiline):
                 click.echo("No quote data found")
                 return 1
 
-            # Output as JSON
-            if len(quotes) == 1:
-                click.echo(json.dumps(quotes[0], indent=2, ensure_ascii=False, default=str))
-            else:
-                click.echo(json.dumps(quotes, indent=2, ensure_ascii=False, default=str))
+            # Output formatted like rains does
+            for quote in quotes:
+                write_quote_formatted(quote)
 
         return 0
 
@@ -526,120 +524,199 @@ def info(symbol, all, financials, structure, dividends, presses):
         sina_service = SinaFinanceService()
         click.echo(f"Fetching information for {symbol}...")
 
-        result = {}
-
-        # Get profile
+        # Get profile like rains does
         profile = sina_service.get_profile(symbol)
         if profile:
-            # Format profile output like rains
+            # Format output exactly like rains
             click.echo(click.style("基本信息", bold=True))
             click.echo(f"证券代码\t{symbol}")
+            if profile.used_name:  # Company name history
+                click.echo(f"简称历史\t{profile.used_name}")
             click.echo(f"公司名称\t{profile.name}")
             if profile.listing_date:
                 click.echo(f"上市日期\t{profile.listing_date}")
+            if profile.listing_price:  # IPO price
+                click.echo(f"发行价格\t{profile.listing_price:.2f}")
             if profile.industry:
                 click.echo(f"行业分类\t{profile.industry}")
             if profile.business:
                 click.echo(f"主营业务\t{profile.business}")
-            if profile.website:
-                click.echo(f"公司网址\t{profile.website}")
-            if profile.address:
+            if profile.address:  # Business address
                 click.echo(f"办公地址\t{profile.address}")
-            result['profile'] = profile.to_dict()
+            if profile.website:
+                click.echo(click.style(f"公司网址\t{profile.website}", underline=True))
         else:
             click.echo("Warning: Could not fetch company profile")
 
-        # Get real-time quote
+        # Get current price from quote like rains does
         quote_data = sina_service.get_quote(symbol)
         if quote_data:
             click.echo(f"当前价格\t{quote_data.price or 'N/A'}")
             if quote_data.price_change_rate is not None:
                 click.echo(f"涨跌幅\t{quote_data.price_change_rate:.2f}%")
-            result['quote'] = quote_data.to_dict()
         else:
+            # Quote fetching failed
             click.echo("Warning: Could not fetch real-time quote")
 
-        # Optional data
+        # Add financial ratios like rains (show even if quote fails)
+        if profile:
+            if profile.pb_ratio is not None:
+                click.echo(f"市净率PB\t{profile.pb_ratio:.2f}")
+            if profile.pe_ratio is not None:
+                click.echo(f"市盈率TTM\t{profile.pe_ratio:.2f}")
+            if profile.market_cap is not None:
+                if profile.market_cap >= 100000000:  # Convert to billion yuan
+                    click.echo(f"总市值  \t{profile.market_cap/100000000:.2f}亿")
+                else:
+                    click.echo(f"总市值  \t{profile.market_cap/10000:.2f}万")
+            if profile.traded_market_cap and quote_data and quote_data.price:
+                traded_market_cap = profile.traded_market_cap
+                if traded_market_cap >= 100000000:  # Convert to billion yuan
+                    click.echo(f"流通市值\t{traded_market_cap/100000000:.2f}亿")
+                else:
+                    click.echo(f"流通市值\t{traded_market_cap/10000:.2f}万")
+
+        # Optional data sections - simplified to match rains speed
         if all or financials:
-            financials_data = sina_service.get_financials(symbol)
-            if financials_data:
-                click.echo(f"\n{click.style('财务指标', bold=True)}")
-                # Format financials table - simplified version
-                cols = ["报告期", "营收", "净利润", "每股收益"]
-                for i, col in enumerate(cols):
-                    output = f"{col:<12}"
-                    for f in financials_data[:4]:  # Show last 4 periods
-                        match i:
-                            case 0:
-                                output += f"\t{f.period:<12}"
-                            case 1:
-                                revenue = f.revenue
-                                if revenue:
-                                    if revenue > 100_000_000:
-                                        output += f"\t{revenue/100_000_000:.2f}亿"
-                                    else:
-                                        output += f"\t{revenue/10_000:.2f}万"
-                                else:
-                                    output += "\tN/A"
-                            case 2:
-                                profit = f.net_profit
-                                if profit:
-                                    if profit > 100_000_000:
-                                        output += f"\t{profit/100_000_000:.2f}亿"
-                                    else:
-                                        output += f"\t{profit/10_000:.2f}万"
-                                else:
-                                    output += "\tN/A"
-                            case 3:
-                                eps = f.eps
-                                output += f"\t{eps:.2f}" if eps else "\tN/A"
-                    click.echo(output)
-                result['financials'] = [f.to_dict() for f in financials_data]
+            click.echo(f"\n{click.style('财务指标', bold=True)}")
+            try:
+                financial_data = sina_service.get_financials(symbol)
+                if financial_data:
+                    # Output like rains does - table format
+                    cols = ["截止日期", "总营收", "净利润", "每股净资产", "每股资本公积金"]
+                    for i, col in enumerate(cols):
+                        output = f"{col:<16}"
+                        for f in financial_data:
+                            match i:
+                                case 0:
+                                    output += f"\t{f.date:<16}"
+                                case 1:
+                                    value = f"{f.total_revenue:,.0f}" if f.total_revenue else "-"
+                                    output += f"\t{value:<16}"
+                                case 2:
+                                    value = f"{f.net_profit:,.0f}" if f.net_profit else "-"
+                                    output += f"\t{value:<16}"
+                                case 3:
+                                    value = f"{f.ps_net_assets:.4f}" if f.ps_net_assets else "-"
+                                    output += f"\t{value:<16}"
+                                case 4:
+                                    value = f"{f.ps_capital_reserve:.4f}" if f.ps_capital_reserve else "-"
+                                    output += f"\t{value:<16}"
+                        click.echo(output)
+                else:
+                    click.echo("No financial data available")
+            except Exception as e:
+                click.echo(f"Warning: Could not fetch financial data: {e}")
 
         if all or structure:
-            structure_data = sina_service.get_shareholder_structure(symbol)
-            if structure_data:
-                click.echo(f"\n{click.style('股东结构', bold=True)}")
-                if structure_data.total_shareholders:
-                    click.echo(f"股东总数\t{structure_data.total_shareholders}")
-                if structure_data.top_10_shareholders:
-                    click.echo("十大股东")
-                    for i, sh in enumerate(structure_data.top_10_shareholders[:10]):
-                        shares = sh.shares
-                        if shares > 100_000_000:
-                            shares_str = f"{shares/100_000_000:.2f}亿"
-                        else:
-                            shares_str = f"{shares/10_000:.2f}万"
-                        click.echo(f"{i+1}\t{sh.name}({sh.percentage:.1f}% {shares_str})")
-                result['shareholder_structure'] = structure_data.to_dict()
+            click.echo(f"\n{click.style('股东结构', bold=True)}")
+            try:
+                structure_data = sina_service.get_shareholder_structure(symbol)
+                if structure_data:
+                    # Output like rains does
+                    if structure_data.holders_num and structure_data.shares_avg:
+                        holders = []
+                        shares = []
+                        for s in [structure_data]:  # Only one structure in rains
+                            holders.append(f"{structure_data.holders_num:.0f}({structure_data.date})")
+                            shares.append(f"{structure_data.shares_avg:.0f}({structure_data.date})")
+
+                        click.echo(f"截止日期\t{structure_data.date}")
+                        click.echo(f"股东户数\t{' '.join(holders)}")
+                        click.echo(f"平均持股\t{' '.join(shares)}")
+                        click.echo("十大股东")
+
+                        for i, h in enumerate(structure_data.holders_ten):
+                            shares_fmt = f"{h.shares:,.0f}" if h.shares >= 10000 else f"{h.shares:.0f}"
+                            click.echo(f"{i+1}\t{h.name}\t({h.percent:.1f}%) {shares_fmt}")
+                else:
+                    click.echo("No shareholder structure data available")
+            except Exception as e:
+                click.echo(f"Warning: Could not fetch shareholder structure: {e}")
 
         if all or dividends:
-            dividends_data = sina_service.get_dividends(symbol)
-            if dividends_data:
-                click.echo(f"\n{click.style('分红送配', bold=True)}")
-                click.echo("股权登记日 \t 除权除息日 \t 每股分红 \t 送股比例")
-                for d in dividends_data:
-                    record_date = d.record_date if d.record_date else "N/A"
-                    ex_date = d.ex_dividend_date if d.ex_dividend_date else "N/A"
-                    dividend = d.dividend_per_share if d.dividend_per_share else 0
-                    share_dividend = d.share_dividend if d.share_dividend else 0
-                    click.echo(f"{record_date} \t {ex_date} \t {dividend:.2f} \t {share_dividend:.2f}")
-                result['dividends'] = [d.to_dict() for d in dividends_data]
+            click.echo(f"\n{click.style('分红送配', bold=True)}")
+            try:
+                dividend_data = sina_service.get_dividends(symbol)
+                if dividend_data:
+                    # Output like rains does
+                    click.echo("公告日期 \t 分红送配 \t\t\t 除权除息日 \t 股权登记日")
+                    for d in dividend_data:
+                        # Format the dividend info like rains does
+                        info_parts = []
+                        if d.shares_dividend > 0.0:
+                            info_parts.append(f"送{d.shares_dividend}股")
+                        if d.shares_into > 0.0:
+                            info_parts.append(f"转{d.shares_into}股")
+                        if d.money > 0.0:
+                            info_parts.append(f"派{d.money}元")
+
+                        info = "10" + "".join(info_parts) if info_parts else "不分配\t"
+
+                        click.echo(
+                            f"{d.date} \t {info if len(info) < 19 else info} \t\t {d.date_dividend if d.date_dividend else ' -\t'} \t {d.date_record if d.date_record else ' - '}"
+                        )
+                else:
+                    click.echo("No dividend data available")
+            except Exception as e:
+                click.echo(f"Warning: Could not fetch dividend data: {e}")
 
         if all or presses:
-            press_data = sina_service.get_press_releases(symbol)
-            if press_data:
-                click.echo(f"\n{click.style('最新公告', bold=True)}")
-                for p in press_data:
-                    click.echo(f"{p.date}\t{p.title}\t{p.url}")
-                result['press_releases'] = [p.to_dict() for p in press_data]
+            click.echo(f"\n{click.style('最新公告', bold=True)}")
+            try:
+                press_data = sina_service.get_press_releases(symbol)
+                if press_data:
+                    # Output like rains does
+                    for p in press_data:
+                        click.echo(f"{p.date}\t{p.title}\t{p.url}")
+                else:
+                    click.echo("No press release data available")
+            except Exception as e:
+                click.echo(f"Warning: Could not fetch press release data: {e}")
 
-        # Only output JSON if no formatted output was shown
-        if not profile and not quote_data and not (all or financials or structure or dividends or presses):
-            click.echo(json.dumps(result, indent=2, ensure_ascii=False, default=str))
         return 0
 
     except Exception as e:
         logger.error(f"Info fetch failed: {e}", exc_info=True)
         click.echo(f"Info fetch failed: {e}", err=True)
         return 1
+
+
+def write_quote_formatted(quote):
+    """Format and output quote data like rains does.
+
+    Args:
+        quote: Quote object with market data
+    """
+    from datetime import datetime
+
+    # Calculate change rate and format price
+    rate = (quote.price / quote.close_price - 1.0) * 100.0 if quote.close_price and quote.close_price != 0 else 0.0
+    now = f"{quote.price:.2f} {rate:.2f}%"
+
+    # Format volume (convert to 万 if large)
+    volume = quote.volume
+    if volume and volume >= 10000:
+        volume_display = f"{volume/10000:.2f}万"
+    else:
+        volume_display = str(volume) if volume else "N/A"
+
+    # Format turnover (convert to 亿 if large)
+    turnover = quote.turnover
+    if turnover and turnover >= 100000000:
+        turnover_display = f"{turnover/100000000:.2f}亿"
+    else:
+        turnover_display = f"{turnover/10000:.2f}万" if turnover else "N/A"
+
+    # Format output exactly like rains - with colors
+    # Note: Click doesn't have built-in color support like owo_colors in Rust,
+    # but we can use click.style for similar effect
+    colored_now = now
+    if rate > 0.0:
+        colored_now = click.style(now, fg='red', bold=True, underline=True)
+    elif rate < 0.0:
+        colored_now = click.style(now, fg='green', bold=True, underline=True)
+    else:
+        colored_now = click.style(now, fg='bright_black', bold=True, underline=True)
+
+    click.echo(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  {quote.symbol}  {colored_now} \t昨收：{quote.close_price:.2f}\t今开：{quote.open_price:.2f}\t最高：{quote.high_price:.2f}\t最低：{quote.low_price:.2f}\t成交量：{volume_display}\t成交额：{turnover_display}\t{quote.name}")

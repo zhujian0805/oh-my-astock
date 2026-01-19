@@ -3,7 +3,7 @@
 import requests
 import json
 import re
-import time
+import math
 from typing import List, Dict, Any, Optional
 from datetime import datetime, date
 from urllib.parse import quote
@@ -24,22 +24,14 @@ class SinaFinanceService:
 
     def __init__(self):
         """Initialize Sina Finance service."""
-        self._configure_ssl()
+        # Simple session setup like rains - just referer header and proper SSL
         self.session = requests.Session()
-        self.session.verify = False  # Sina Finance often has SSL issues
         self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-            'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'Accept-Encoding': 'gzip, deflate, br',
-            'DNT': '1',
-            'Connection': 'keep-alive',
-            'Upgrade-Insecure-Requests': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none',
-            'Cache-Control': 'max-age=0',
+            'Referer': 'https://finance.sina.com.cn',  # Same as rains
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
         })
+        # Enable SSL verification but handle certificate issues gracefully
+        self.session.verify = True
 
     def _configure_ssl(self):
         """Configure SSL settings to handle certificate issues."""
@@ -128,50 +120,69 @@ class SinaFinanceService:
             List of stock search results with code, name, market info
         """
         try:
-            # Sina search API - construct URL like rains does
+            # Sina search API - exact same as rains
             url = f"https://suggest3.sinajs.cn/suggest/type=11,12,15,21,22,23,24,25,26,31,33,41&key={quote(query)}"
 
+            # Simple requests call like rains
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
 
-            # Parse JSONP response like rains does
-            content = response.text.strip()
+            # Handle gb2312 encoding for Sina
+            if response.encoding != 'utf-8':
+                response.encoding = 'gb2312'
+                content = response.text
+            else:
+                content = response.text
+
             results = []
 
-            # Extract JSON content from quotes using regex (like rains)
+            # Extract JSON content using regex (exact same as rains)
             import re
             json_match = re.search(r'"([^"]*)"', content)
             if json_match:
                 matched = json_match.group(1)
                 if matched:
-                    # Parse the CSV data
+                    # Parse the CSV data (exact same logic as rains)
                     stocks_data = matched.split(';')
                     for stock_str in stocks_data:
                         if not stock_str.strip():
                             continue
                         parts = stock_str.split(',')
-                        if len(parts) >= 3:
-                            code = parts[0]
-                            name = parts[1]
-                            market_type = parts[2]
+                        if len(parts) >= 9:  # Need at least 9 fields like rains
+                            # Extract data like rains does
+                            market_type = parts[1]
+                            code = parts[2]
+                            full_code = parts[3].upper()  # This is the symbol field
+                            name = parts[4]
+                            display_code = parts[0]  # This is used for display
 
-                            # Determine exchange from code
-                            exchange = self._get_exchange_from_code(code)
+                            # Skip if not in market (like rains checks)
+                            if parts[8] != "1":
+                                continue
+
+                            # Construct symbol like rains does
+                            symbol = full_code
+                            if market_type in ["31", "33"]:  # Hong Kong
+                                symbol = f"HK{full_code}"
+                            elif market_type == "41":  # US stock
+                                if not full_code.startswith('$'):
+                                    symbol = f"${full_code}"
 
                             results.append({
-                                'code': code,
+                                'full_code': symbol,
                                 'name': name,
-                                'market_type': market_type,
-                                'exchange': exchange,
-                                'full_code': f"{exchange}{code}"
+                                'code': code,
+                                'market_type': market_type
                             })
+
+            return results
 
         except Exception as e:
             logger.error(f"Failed to search stocks for query '{query}': {e}")
             return []
 
     def get_quote(self, symbol: str) -> Optional[Quote]:
-        """Get real-time quote for a stock.
+        """Get real-time quote for a stock using direct Sina Finance API like rains.
 
         Args:
             symbol: Stock symbol (e.g., '000001' or 'SH000001')
@@ -180,43 +191,89 @@ class SinaFinanceService:
             Quote object or None if failed
         """
         try:
-            # Configure SSL for akshare before importing
-            self._configure_akshare_ssl()
-
-            import akshare as ak
-            import pandas as pd
-
-            # Get real-time data for this stock
-            df = ak.stock_zh_a_spot_em()
-            # Normalize symbol to 6-digit code
+            # Use direct Sina Finance API like rains does
+            # Normalize symbol to remove exchange prefix
             code = symbol.lstrip('SH').lstrip('SZ').lstrip('BJ').zfill(6)
-            df = df[df['代码'] == code]
+            # Add exchange prefix back for Sina API
+            exchange = self._get_exchange_from_code(code)
+            full_symbol = f"{exchange}{code}"
 
-            if df.empty:
-                logger.warning(f"No quote data found for symbol {symbol}")
+            # Sina quote API - same as rains
+            url = f"https://hq.sinajs.cn/list={full_symbol.lower()}"
+
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+
+            # Handle gb2312 encoding for Sina
+            if response.encoding != 'utf-8':
+                response.encoding = 'gb2312'
+                content = response.text
+            else:
+                content = response.text
+
+            # Parse quote data like rains does - simple regex extraction
+            quote_data = self._parse_sina_quote_simple(content, full_symbol)
+            if quote_data:
+                return quote_data
+
+            logger.warning(f"No quote data found for symbol {symbol}")
+            return None
+
+        except Exception as e:
+            logger.error(f"Failed to get quote for symbol {symbol}: {e}")
+            return None
+
+    def _parse_sina_quote_simple(self, content: str, symbol: str) -> Optional[Quote]:
+        """Parse Sina Finance quote data like rains does - simple regex extraction.
+
+        Args:
+            content: Raw response content from Sina API
+            symbol: Stock symbol
+
+        Returns:
+            Quote object or None if parsing failed
+        """
+        try:
+            # Extract quote data using regex like rains does
+            import re
+            pattern = rf'hq_str_{re.escape(symbol.lower())}="([^"]*)"'
+            match = re.search(pattern, content)
+
+            if not match:
+                logger.debug(f"No quote data found in response for {symbol}")
                 return None
 
-            row = df.iloc[0]
+            quote_str = match.group(1)
+            logger.debug(f"Extracted quote string: {quote_str}")
 
-            # Extract data
-            name = str(row.get('名称', ''))
-            price = float(row.get('最新价', 0)) if pd.notna(row.get('最新价')) else None
-            open_price = float(row.get('今开', 0)) if pd.notna(row.get('今开')) else None
-            high_price = float(row.get('最高', 0)) if pd.notna(row.get('最高')) else None
-            low_price = float(row.get('最低', 0)) if pd.notna(row.get('最低')) else None
-            close_price = float(row.get('昨收', 0)) if pd.notna(row.get('昨收')) else None
-            volume = int(float(row.get('成交量', 0))) if pd.notna(row.get('成交量')) else None
-            turnover = float(row.get('成交额', 0)) if pd.notna(row.get('成交额')) else None
+            # Parse CSV data like rains does (quote_from_str function)
+            values = quote_str.split(',')
+            if len(values) < 32:  # Need at least 32 fields
+                logger.warning(f"Incomplete quote data for {symbol}: {len(values)} fields")
+                return None
 
-            # Calculate change
+            # Extract data like rains (quote_from_str function)
+            name = values[0]  # 股票名称
+            open_price = self._safe_float(values[1])  # 今开
+            close_price = self._safe_float(values[2])  # 昨收
+            price = self._safe_float(values[3])  # 当前价格 (最新价)
+            high_price = self._safe_float(values[4])  # 最高
+            low_price = self._safe_float(values[5])  # 最低
+            volume = self._safe_int(values[8])  # 成交量
+            turnover = self._safe_float(values[9])  # 成交额
+
+            # Calculate change and change rate
             price_change = None
             price_change_rate = None
             if price is not None and close_price is not None and close_price != 0:
                 price_change = price - close_price
                 price_change_rate = (price_change / close_price) * 100
 
-            # Market status (simplified)
-            market_status = "trading"  # akshare provides real-time data
+            # Extract date and time (not used in Quote model but keep for future)
+            date_str = values[30] if len(values) > 30 else None
+            time_str = values[31] if len(values) > 31 else None
+
+            market_status = "trading"
 
             quote = Quote(
                 symbol=symbol,
@@ -230,19 +287,92 @@ class SinaFinanceService:
                 turnover=turnover,
                 price_change=price_change,
                 price_change_rate=price_change_rate,
-                timestamp=pd.Timestamp.now(),
+                timestamp=datetime.now(),  # Use datetime instead of pd.Timestamp
                 market_status=market_status
             )
 
-            logger.info(f"Retrieved quote for {symbol}: {quote}")
+            logger.info(f"Parsed Sina quote for {symbol}: price={price}")
             return quote
 
         except Exception as e:
-            logger.error(f"Failed to get quote for symbol {symbol}: {e}")
+            logger.error(f"Failed to parse Sina quote data for {symbol}: {e}")
+            return None
+
+    def _safe_int(self, value: str) -> Optional[int]:
+        """Safely convert string to int."""
+        try:
+            return int(float(value)) if value and value != '0' else None
+        except (ValueError, TypeError):
+            return None
+
+    def _safe_float(self, value: str) -> Optional[float]:
+        """Safely convert string to float."""
+        try:
+            return float(value) if value and value != '0' and value != '0.0' else None
+        except (ValueError, TypeError):
+            return None
+
+    def _parse_sina_quote_info(self, content: str, code: str) -> Optional[Dict[str, Any]]:
+        """Parse Sina quote info data like rains does for profile method."""
+        try:
+            result = {}
+
+            # Parse quote data (first part)
+            quote_match = re.search(rf'hq_str_{re.escape(code.lower())}="([^"]*)"', content)
+            if quote_match:
+                quote_str = quote_match.group(1)
+                values = quote_str.split(',')
+                if len(values) >= 4:
+                    result['price'] = self._safe_float(values[3])  # Current price
+
+            # Parse info data (second part with _i suffix)
+            info_match = re.search(rf'hq_str_{re.escape(code.lower())}_i="([^"]*)"', content)
+            if info_match:
+                info_str = info_match.group(1)
+                info_values = info_str.split(',')
+                if len(info_values) >= 20:
+                    # Extract financial data like rains does
+                    vps = self._safe_float(info_values[5])  # 每股净资产
+                    cap = self._safe_float(info_values[7])   # 总股本
+                    traded_cap = self._safe_float(info_values[8])  # 流通市值
+                    profit = self._safe_float(info_values[18])  # 净利润
+
+                    price = result.get('price')
+                    if price is not None and vps is not None and vps > 0:
+                        pb_ratio = price / vps
+                        if pb_ratio != float('inf') and not math.isnan(pb_ratio):
+                            result['pb_ratio'] = round(pb_ratio, 2)
+                        else:
+                            result['pb_ratio'] = None
+
+                    # Market cap calculation
+                    if price is not None and cap is not None:
+                        result['market_cap'] = price * cap * 10000.0  # Convert to yuan
+
+                    if price is not None and traded_cap is not None:
+                        result['traded_market_cap'] = price * traded_cap * 10000.0  # Convert to yuan
+
+                    # PE ratio calculation
+                    market_cap = result.get('market_cap')
+                    if profit is not None and profit > 0 and market_cap is not None:
+                        pe_ratio = market_cap / profit / 100000000.0
+                        if pe_ratio != float('inf') and not math.isnan(pe_ratio):
+                            result['pe_ratio'] = round(pe_ratio, 2)
+                        else:
+                            result['pe_ratio'] = None
+
+                    # Extract category/industry
+                    if len(info_values) > 34:
+                        result['category'] = info_values[34]
+
+            return result if result else None
+
+        except Exception as e:
+            logger.error(f"Failed to parse Sina quote info for {code}: {e}")
             return None
 
     def get_profile(self, symbol: str) -> Optional[Profile]:
-        """Get company profile information.
+        """Get company profile information using rains-style simple approach.
 
         Args:
             symbol: Stock symbol
@@ -251,234 +381,245 @@ class SinaFinanceService:
             Profile object or None if failed
         """
         try:
-            # Configure SSL for akshare
-            self._configure_akshare_ssl()
-
-            import akshare as ak
-            import pandas as pd
-
-            # Normalize symbol to 6-digit code
-            code = symbol.lstrip('SH').lstrip('SZ').lstrip('BJ').zfill(6)
+            # Use the same approach as rains - simple Sina data collection
+            code = self._normalize_symbol(symbol).replace('SH', '').replace('SZ', '').replace('BJ', '')
 
             profile_data = {
                 'symbol': symbol,
-                'name': symbol,
-                'english_name': None,
+                'name': symbol,  # Default to symbol, will be updated
+                'used_name': None,
+                'listing_date': None,
+                'listing_price': None,
                 'industry': None,
                 'business': None,
-                'market_cap': None,
-                'pe_ratio': None,
-                'pb_ratio': None,
-                'eps': None,
-                'bps': None,
-                'total_shares': None,
-                'circulating_shares': None,
-                'website': None,
                 'address': None,
-                'phone': None,
-                'listing_date': None
+                'website': None,
+                'price': None,
+                'pb_ratio': None,
+                'pe_ratio': None,
+                'market_cap': None,
+                'traded_market_cap': None,
             }
 
-            # Try to get basic individual stock info
-            try:
-                df_basic = ak.stock_individual_info_em(code)
-                if not df_basic.empty:
-                    row = df_basic.iloc[0] if len(df_basic) > 0 else {}
+            # Get profile data from Sina HTML page like rains does
+            self._get_sina_profile_data_simple(code, profile_data)
 
-                    # Extract basic information
-                    profile_data['name'] = str(row.get('股票简称', symbol))
-                    profile_data['industry'] = str(row.get('行业', '')) if row.get('行业') else None
-                    profile_data['total_shares'] = float(row.get('总股本', 0)) if pd.notna(row.get('总股本')) else None
-                    profile_data['circulating_shares'] = float(row.get('流通股', 0)) if pd.notna(row.get('流通股')) else None
-                    profile_data['market_cap'] = float(row.get('总市值', 0)) if pd.notna(row.get('总市值')) else None
+            # If we couldn't get the company name from HTML, try to get it from quote
+            if profile_data['name'] == symbol:
+                try:
+                    quote = self.get_quote(symbol)
+                    if quote and quote.name:
+                        profile_data['name'] = quote.name
+                        logger.debug(f"Using company name from quote: {profile_data['name']}")
+                except Exception as e:
+                    logger.warning(f"Failed to get company name from quote: {e}")
 
-                    # Try to get listing date
-                    if row.get('上市时间'):
-                        try:
-                            listing_date_str = str(row.get('上市时间', ''))
-                            if listing_date_str and listing_date_str != 'None':
-                                profile_data['listing_date'] = pd.to_datetime(listing_date_str).date()
-                        except:
-                            pass
-
-                    logger.debug(f"Retrieved basic info for {symbol} using akshare")
-            except Exception as e:
-                logger.warning(f"Failed to get basic info for {symbol}: {e}")
-                # Continue to other sources instead of failing
-
-            # Skip slow akshare calls and go directly to Sina fallback for better performance
-            # Fall back to Sina scraping
-            logger.info(f"Falling back to Sina scraping for {symbol}")
-            code = self._normalize_symbol(symbol).replace('SH', '').replace('SZ', '').replace('BJ', '')
-
-            # Sina company profile page
-            url = f"https://vip.stock.finance.sina.com.cn/corp/go.php/vCI_CorpInfo/stockid/{code}.phtml"
-
-            try:
-                response = self.session.get(url, timeout=10)
-                response.raise_for_status()
-
-                # Handle gb2312 encoding for Sina pages
-                if response.encoding != 'utf-8':
-                    response.encoding = 'gb2312'
-                    html_content = response.text
-                else:
-                    html_content = response.text
-
-                # Extract basic information using regex patterns
-                name = self._extract_from_html(html_content, r'<title>([^<]+)</title>')
-                if name:
-                    # Clean up the title (remove extra text)
-                    name = name.replace('公司资料_新浪财经_新浪网', '').strip()
-                    if not profile_data['name'] or profile_data['name'] == symbol:
-                        profile_data['name'] = name
-
-                # Extract listing date
-                if not profile_data['listing_date']:
-                    profile_data['listing_date'] = self._extract_listing_date(html_content)
-
-                # Extract industry
-                if not profile_data['industry']:
-                    profile_data['industry'] = self._extract_from_html(html_content, r'行业[：:]\s*([^<\n]+)')
-
-                # Extract business description
-                if not profile_data['business']:
-                    profile_data['business'] = self._extract_business_description(html_content)
-
-                # Extract additional information from Sina page
-                # Try to extract market cap
-                if not profile_data['market_cap']:
-                    market_cap_match = re.search(r'总市值[：:]\s*([0-9,]+\.?\d*)\s*(亿|万)?', html_content, re.IGNORECASE)
-                    if market_cap_match:
-                        try:
-                            value = float(market_cap_match.group(1).replace(',', ''))
-                            unit = market_cap_match.group(2)
-                            if unit == '亿':
-                                value *= 100000000  # Convert to yuan
-                            elif unit == '万':
-                                value *= 10000
-                            profile_data['market_cap'] = value
-                        except (ValueError, IndexError):
-                            pass
-
-                # Try to extract PE ratio
-                if not profile_data['pe_ratio']:
-                    pe_match = re.search(r'市盈率[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
-                    if pe_match:
-                        try:
-                            profile_data['pe_ratio'] = float(pe_match.group(1).replace(',', ''))
-                        except (ValueError, IndexError):
-                            pass
-
-                # Try to extract PB ratio
-                if not profile_data['pb_ratio']:
-                    pb_match = re.search(r'市净率[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
-                    if pb_match:
-                        try:
-                            profile_data['pb_ratio'] = float(pb_match.group(1).replace(',', ''))
-                        except (ValueError, IndexError):
-                            pass
-
-                # Try to extract EPS
-                if not profile_data['eps']:
-                    eps_match = re.search(r'每股收益[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
-                    if eps_match:
-                        try:
-                            profile_data['eps'] = float(eps_match.group(1).replace(',', ''))
-                        except (ValueError, IndexError):
-                            pass
-
-                # Try to extract BPS
-                if not profile_data['bps']:
-                    bps_match = re.search(r'每股净资产[：:]\s*([0-9,]+\.?\d*)', html_content, re.IGNORECASE)
-                    if bps_match:
-                        try:
-                            profile_data['bps'] = float(bps_match.group(1).replace(',', ''))
-                        except (ValueError, IndexError):
-                            pass
-
-                # Try to extract total shares
-                if not profile_data['total_shares']:
-                    total_shares_match = re.search(r'总股本[：:]\s*([0-9,]+\.?\d*)\s*(亿|万)?', html_content, re.IGNORECASE)
-                    if total_shares_match:
-                        try:
-                            value = float(total_shares_match.group(1).replace(',', ''))
-                            unit = total_shares_match.group(2)
-                            if unit == '亿':
-                                value *= 100000000  # Convert to shares
-                            elif unit == '万':
-                                value *= 10000
-                            profile_data['total_shares'] = value
-                        except (ValueError, IndexError):
-                            pass
-
-                # Try to extract circulating shares
-                if not profile_data['circulating_shares']:
-                    circ_shares_match = re.search(r'流通股[：:]\s*([0-9,]+\.?\d*)\s*(亿|万)?', html_content, re.IGNORECASE)
-                    if circ_shares_match:
-                        try:
-                            value = float(circ_shares_match.group(1).replace(',', ''))
-                            unit = circ_shares_match.group(2)
-                            if unit == '亿':
-                                value *= 100000000  # Convert to shares
-                            elif unit == '万':
-                                value *= 10000
-                            profile_data['circulating_shares'] = value
-                        except (ValueError, IndexError):
-                            pass
-
-                # Try to extract website
-                if not profile_data['website']:
-                    website_match = re.search(r'网站[：:]\s*(https?://[^\s<]+)', html_content, re.IGNORECASE)
-                    if website_match:
-                        profile_data['website'] = website_match.group(1).strip()
-
-                # Try to extract address
-                if not profile_data['address']:
-                    address_match = re.search(r'地址[：:]\s*([^<\n]+)', html_content, re.IGNORECASE)
-                    if address_match:
-                        profile_data['address'] = address_match.group(1).strip()
-
-                # Try to extract phone
-                if not profile_data['phone']:
-                    phone_match = re.search(r'电话[：:]\s*([^<\n]+)', html_content, re.IGNORECASE)
-                    if phone_match:
-                        profile_data['phone'] = phone_match.group(1).strip()
-
-                logger.info(f"Retrieved enhanced profile for {symbol} using Sina fallback")
-
-            except Exception as e:
-                logger.warning(f"Sina scraping also failed for {symbol}: {e}")
-
-            # Create Profile object with collected data
+            # Create Profile object
             profile = Profile(
                 symbol=profile_data['symbol'],
                 name=profile_data['name'],
-                english_name=profile_data['english_name'],
+                english_name=None,
+                used_name=profile_data['used_name'],
                 listing_date=profile_data['listing_date'],
+                listing_price=profile_data['listing_price'],
                 industry=profile_data['industry'],
                 business=profile_data['business'],
                 market_cap=profile_data['market_cap'],
+                traded_market_cap=profile_data['traded_market_cap'],
                 pe_ratio=profile_data['pe_ratio'],
                 pb_ratio=profile_data['pb_ratio'],
-                eps=profile_data['eps'],
-                bps=profile_data['bps'],
-                total_shares=profile_data['total_shares'],
-                circulating_shares=profile_data['circulating_shares'],
+                eps=None,
+                bps=None,
+                total_shares=None,
+                circulating_shares=None,
                 website=profile_data['website'],
                 address=profile_data['address'],
-                phone=profile_data['phone']
+                phone=None
             )
 
-            logger.info(f"Retrieved comprehensive profile for {symbol}: {profile}")
             return profile
 
         except Exception as e:
             logger.error(f"Failed to get profile for symbol {symbol}: {e}")
             return None
 
+    def _get_sina_profile_data_simple(self, code: str, profile_data: Dict[str, Any]) -> None:
+        """Get profile data from Sina HTML page using simple regex parsing like rains."""
+        try:
+            # Sina company profile page (same as rains)
+            corp_url = f"https://vip.stock.finance.sina.com.cn/corp/go.php/vCI_CorpInfo/stockid/{code}.phtml"
+
+            response = requests.get(corp_url, timeout=10)
+            response.raise_for_status()
+
+            # Handle gb2312 encoding for Sina pages
+            if response.encoding != 'utf-8':
+                response.encoding = 'gb2312'
+                html_content = response.text
+            else:
+                html_content = response.text
+
+            # Simple regex extraction like rains does - much faster than BeautifulSoup
+            # Extract company name - updated pattern for Sina's current HTML structure
+            name_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*公司名称\s*：</td>\s*<td[^>]*>([^<]+)</td>', html_content)
+            if name_match:
+                profile_data['name'] = name_match.group(1).strip()
+                logger.debug(f"Found company name: {profile_data['name']}")
+            else:
+                logger.warning("Company name regex did not match")
+                # Try a broader pattern
+                alt_name_match = re.search(r'公司名称[：:]\s*([^<\n]+)', html_content)
+                if alt_name_match:
+                    profile_data['name'] = alt_name_match.group(1).strip()
+                    logger.debug(f"Found company name with alt pattern: {profile_data['name']}")
+                else:
+                    logger.warning("Company name not found with any pattern")
+
+            # Extract listing date (position 7 in rains)
+            date_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*上市日期\s*：</td>\s*<td[^>]*>([^<]+)</td>', html_content)
+            if date_match:
+                try:
+                    from datetime import datetime
+                    date_str = date_match.group(1).strip()
+                    parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+                    profile_data['listing_date'] = parsed_date
+                except (ValueError, TypeError):
+                    pass
+
+            # Extract IPO price (position 9 in rains)
+            price_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*发行价格\s*：</td>\s*<td[^>]*>([0-9.]+)</td>', html_content)
+            if price_match:
+                try:
+                    profile_data['listing_price'] = float(price_match.group(1))
+                except (ValueError, TypeError):
+                    pass
+
+            # Extract website (position 35 in rains)
+            website_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*公司网址\s*：</td>\s*<td[^>]*><a[^>]*href="([^"]+)"', html_content)
+            if website_match:
+                profile_data['website'] = website_match.group(1).strip()
+
+            # Extract used name/company name history (position 41 in rains)
+            used_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*简称历史\s*：</td>\s*<td[^>]*>([^<]+)</td>', html_content)
+            if used_match:
+                used_name = used_match.group(1).strip()
+                if used_name and used_name != '暂无数据':
+                    profile_data['used_name'] = used_name
+
+            # Extract business address (position 45 in rains)
+            addr_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*办公地址\s*：</td>\s*<td[^>]*>([^<]+)</td>', html_content)
+            if addr_match:
+                profile_data['address'] = addr_match.group(1).strip()
+
+            # Extract main business (position 49 in rains)
+            business_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*主营业务\s*：</td>\s*<td[^>]*>([^<]+)</td>', html_content)
+            if business_match:
+                profile_data['business'] = business_match.group(1).strip()
+
+            # Extract industry/category
+            industry_match = re.search(r'<td[^>]*class="ct"[^>]*>\s*行业分类\s*：</td>\s*<td[^>]*>([^<]+)</td>', html_content)
+            if industry_match:
+                profile_data['industry'] = industry_match.group(1).strip()
+
+            # Get quote info for financial ratios (like rains does)
+            full_symbol = f"sh{code}"  # Add exchange prefix
+            info_url = f"https://hq.sinajs.cn/list={full_symbol},{full_symbol}_i"
+
+            try:
+                info_response = requests.get(info_url, timeout=10, headers={
+                    'Referer': 'https://finance.sina.com.cn',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                })
+                info_response.raise_for_status()
+
+                if info_response.encoding != 'utf-8':
+                    info_response.encoding = 'gb2312'
+                    info_content = info_response.text
+                else:
+                    info_content = info_response.text
+
+                # Parse quote data like rains does
+                quote_data = self._parse_sina_quote_info(info_content, full_symbol)
+                if quote_data:
+                    profile_data['price'] = quote_data.get('price')
+                    profile_data['pb_ratio'] = quote_data.get('pb_ratio')
+                    profile_data['pe_ratio'] = quote_data.get('pe_ratio')
+                    profile_data['market_cap'] = quote_data.get('market_cap')
+                    profile_data['traded_market_cap'] = quote_data.get('traded_market_cap')
+
+            except Exception as e:
+                logger.warning(f"Failed to get quote info for {code}: {e}")
+                # Try to get current price from basic quote API instead
+                try:
+                    quote = self.get_quote(f"SH{code}")
+                    if quote:
+                        profile_data['price'] = quote.price
+                        # We can't get financial ratios without the _i API, so leave them as None
+                except Exception as e2:
+                    logger.warning(f"Failed to get basic quote for {code}: {e2}")
+
+        except Exception as e:
+            logger.warning(f"Failed to get Sina profile data for {code}: {e}")
+
+    def _get_financial_data_from_akshare(self, symbol: str, profile_data: Dict[str, Any]) -> None:
+        """Get financial data from akshare instead of Sina CSV API.
+
+        Args:
+            symbol: Stock symbol
+            profile_data: Profile data dictionary to update
+        """
+        try:
+            # Use akshare for reliable financial data
+            import akshare as ak
+
+            # Get PB ratio
+            try:
+                pb_df = ak.stock_zh_valuation_baidu(symbol.replace('SH', '').replace('SZ', '').replace('BJ', ''), '市净率')
+                if not pb_df.empty:
+                    profile_data['pb_ratio'] = float(pb_df.iloc[0]['value'])
+            except Exception as e:
+                logger.warning(f"Failed to get PB ratio for {symbol}: {e}")
+
+            # Get PE ratio (TTM)
+            try:
+                pe_df = ak.stock_zh_valuation_baidu(symbol.replace('SH', '').replace('SZ', '').replace('BJ', ''), '市盈率(TTM)')
+                if not pe_df.empty:
+                    profile_data['pe_ratio'] = float(pe_df.iloc[0]['value'])
+            except Exception as e:
+                logger.warning(f"Failed to get PE ratio for {symbol}: {e}")
+
+            # Get current price as fallback
+            try:
+                price_df = ak.stock_zh_valuation_baidu(symbol.replace('SH', '').replace('SZ', '').replace('BJ', ''), '最新价')
+                if not price_df.empty:
+                    profile_data['price'] = float(price_df.iloc[0]['value'])
+            except Exception as e:
+                logger.warning(f"Failed to get current price for {symbol}: {e}")
+
+        except Exception as e:
+            logger.warning(f"Failed to get akshare financial data for {symbol}: {e}")
+
+    def _calculate_financial_ratios(self, profile_data: Dict[str, Any]) -> None:
+        """Calculate financial ratios like rains does."""
+        try:
+            # Calculate market capitalization if we have the data
+            # This is a simplified version - rains has more sophisticated calculations
+            if profile_data['price'] and profile_data['total_shares']:
+                profile_data['market_cap'] = profile_data['price'] * profile_data['total_shares']
+
+            if profile_data['price'] and profile_data['circulating_shares']:
+                profile_data['traded_market_cap'] = profile_data['price'] * profile_data['circulating_shares']
+
+            # PE ratio calculation would require profit data
+            # This is simplified - rains does more complex calculations
+
+            logger.debug("Calculated financial ratios")
+
+        except Exception as e:
+            logger.warning(f"Failed to calculate financial ratios: {e}")
+
     def get_financials(self, symbol: str) -> List[Financial]:
-        """Get financial data for a stock.
+        """Get financial data for a stock using same approach as rains.
 
         Args:
             symbol: Stock symbol
@@ -489,7 +630,7 @@ class SinaFinanceService:
         try:
             code = self._normalize_symbol(symbol).replace('SH', '').replace('SZ', '').replace('BJ', '')
 
-            # Sina financial data page
+            # Sina financial data page - same as rains
             url = f"https://money.finance.sina.com.cn/corp/go.php/vFD_FinanceSummary/stockid/{code}.phtml"
 
             response = self.session.get(url, timeout=10)
@@ -497,11 +638,9 @@ class SinaFinanceService:
 
             html_content = response.text
 
-            # Parse financial tables (simplified - would need more robust parsing)
-            financials = []
+            # Parse financial tables like rains does
+            financials = self._parse_financials_html(html_content)
 
-            # This is a placeholder - actual implementation would need to parse the HTML tables
-            # For now, return empty list
             logger.info(f"Retrieved {len(financials)} financial records for {symbol}")
             return financials
 
@@ -509,8 +648,106 @@ class SinaFinanceService:
             logger.error(f"Failed to get financials for symbol {symbol}: {e}")
             return []
 
+    def _parse_financials_html(self, html_content: str) -> List[Financial]:
+        """Parse financial data from Sina HTML like rains does.
+
+        Args:
+            html_content: HTML content from Sina financial page
+
+        Returns:
+            List of Financial objects
+        """
+        try:
+            from bs4 import BeautifulSoup
+
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Find the financial table like rains does (using CSS selector)
+            table = soup.select_one('#FundHoldSharesTable')
+            if not table:
+                logger.warning("Financial table not found in HTML")
+                return []
+
+            # Parse table rows like rains does
+            rows = table.select('tr')
+            if len(rows) < 2:  # Need at least header + data rows
+                logger.warning("Not enough rows in financial table")
+                return []
+
+            financials = []
+            current_financial = None
+
+            # Skip header row, process data rows
+            for row in rows[1:]:
+                cells = row.select('td')
+                if len(cells) < 12:  # Need 12 columns like rains expects
+                    continue
+
+                # Extract data like rains does (12 columns per financial record)
+                try:
+                    date = cells[0].get_text().strip()
+                    total_revenue = self._parse_financial_value(cells[8].get_text().strip())
+                    net_profit = self._parse_financial_value(cells[10].get_text().strip())
+                    ps_net_assets = self._parse_financial_value(cells[1].get_text().strip())
+                    ps_capital_reserve = self._parse_financial_value(cells[3].get_text().strip())
+
+                    # Create financial record
+                    financial = Financial(
+                        date=date,
+                        total_revenue=total_revenue,
+                        net_profit=net_profit,
+                        ps_net_assets=ps_net_assets,
+                        ps_capital_reserve=ps_capital_reserve,
+                        total_revenue_rate=0.0,  # Will be calculated later
+                        net_profit_rate=0.0       # Will be calculated later
+                    )
+
+                    financials.append(financial)
+
+                except (ValueError, IndexError) as e:
+                    logger.warning(f"Failed to parse financial row: {e}")
+                    continue
+
+            # Calculate growth rates like rains does
+            for i in range(len(financials)):
+                if i + 4 < len(financials):  # Need previous year data
+                    current = financials[i]
+                    previous = financials[i + 4]
+
+                    if previous.total_revenue and previous.total_revenue != 0:
+                        current.total_revenue_rate = ((current.total_revenue - previous.total_revenue) / previous.total_revenue) * 100.0
+
+                    if previous.net_profit and previous.net_profit != 0:
+                        current.net_profit_rate = ((current.net_profit - previous.net_profit) / previous.net_profit) * 100.0
+
+            # Return only the most recent 4 quarters like rains does
+            return financials[:4]
+
+        except Exception as e:
+            logger.error(f"Failed to parse financials HTML: {e}")
+            return []
+
+    def _parse_financial_value(self, value: str) -> Optional[float]:
+        """Parse financial value string like rains does.
+
+        Args:
+            value: String value from HTML
+
+        Returns:
+            Parsed float value or None
+        """
+        if not value or value.strip() in ('', '-', '--', 'N/A'):
+            return None
+
+        try:
+            # Remove commas and convert to float
+            clean_value = value.replace(',', '').strip()
+            return float(clean_value)
+        except (ValueError, TypeError):
+            return None
+
     def get_shareholder_structure(self, symbol: str) -> Optional[Structure]:
-        """Get shareholder structure information.
+        """Get shareholder structure information like rains does.
 
         Args:
             symbol: Stock symbol
@@ -521,19 +758,102 @@ class SinaFinanceService:
         try:
             code = self._normalize_symbol(symbol).replace('SH', '').replace('SZ', '').replace('BJ', '')
 
-            # Sina shareholder structure page (this might not exist or be different)
-            # Placeholder implementation
-            structure = Structure(symbol=symbol)
+            # Sina shareholder structure page - same as rains
+            url = f"https://vip.stock.finance.sina.com.cn/corp/go.php/vCI_StockHolder/stockid/{code}.phtml"
 
-            logger.info(f"Retrieved shareholder structure for {symbol}: {structure}")
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+
+            html_content = response.text
+
+            # Parse shareholder structure like rains does
+            structure = self._parse_shareholder_structure_html(html_content)
+
+            logger.info(f"Retrieved shareholder structure for {symbol}")
             return structure
 
         except Exception as e:
             logger.error(f"Failed to get shareholder structure for symbol {symbol}: {e}")
             return None
 
+    def _parse_shareholder_structure_html(self, html_content: str) -> Optional[Structure]:
+        """Parse shareholder structure from Sina HTML like rains does.
+
+        Args:
+            html_content: HTML content from Sina shareholder page
+
+        Returns:
+            Structure object or None if parsing failed
+        """
+        try:
+            from bs4 import BeautifulSoup
+
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Find the shareholder table like rains does (Table1)
+            table = soup.select_one('#Table1')
+            if not table:
+                logger.warning("Shareholder table not found in HTML")
+                return None
+
+            # Parse table rows like rains does
+            rows = table.select('tbody tr')
+            if len(rows) < 2:  # Need at least header + data rows
+                logger.warning("Not enough rows in shareholder table")
+                return None
+
+            structures = []
+            current_structure = None
+
+            # Process rows like rains does (17 rows per structure record)
+            for i, row in enumerate(rows):
+                cells = row.select('td')
+                if len(cells) < 2:
+                    continue
+
+                match i % 17:  # rains processes 17 rows per shareholder structure
+                    case 0:  # Date row
+                        if current_structure:
+                            structures.append(current_structure)
+                        current_structure = Structure(date=cells[0].get_text().strip())
+                        current_structure.holders_ten = []
+
+                    case 3:  # Holders number
+                        if current_structure:
+                            current_structure.holders_num = self._parse_financial_value(cells[0].get_text().strip())
+
+                    case 4:  # Average shares
+                        if current_structure:
+                            current_structure.shares_avg = self._parse_financial_value(cells[0].get_text().strip())
+
+                    case i if 6 <= i <= 15:  # Top 10 holders (rows 6-15)
+                        if current_structure and current_structure.holders_ten is not None and len(cells) >= 4:
+                            try:
+                                from models.structure import Shareholder
+                                holder = Shareholder(
+                                    name=cells[1].get_text().strip(),
+                                    shares=self._parse_financial_value(cells[2].get_text().strip()) or 0.0,
+                                    percent=self._parse_financial_value(cells[3].get_text().strip()) or 0.0,
+                                    shares_type=cells[4].get_text().strip() if len(cells) > 4 else ""
+                                )
+                                current_structure.holders_ten.append(holder)
+                            except (ValueError, IndexError) as e:
+                                logger.warning(f"Failed to parse shareholder row: {e}")
+                                continue
+
+            # Add the last structure
+            if current_structure:
+                structures.append(current_structure)
+
+            # Return the most recent structure like rains does
+            return structures[0] if structures else None
+
+        except Exception as e:
+            logger.error(f"Failed to parse shareholder structure HTML: {e}")
+            return None
+
     def get_dividends(self, symbol: str) -> List[Dividend]:
-        """Get dividend history for a stock.
+        """Get dividend history for a stock like rains does.
 
         Args:
             symbol: Stock symbol
@@ -542,9 +862,18 @@ class SinaFinanceService:
             List of Dividend objects
         """
         try:
-            # Placeholder implementation - Sina doesn't have a dedicated dividend API
-            # Would need to scrape from company pages or other sources
-            dividends = []
+            code = self._normalize_symbol(symbol).replace('SH', '').replace('SZ', '').replace('BJ', '')
+
+            # Sina dividend page - same as rains
+            url = f"https://vip.stock.finance.sina.com.cn/corp/go.php/vISSUE_ShareBonus/stockid/{code}.phtml"
+
+            response = self.session.get(url, timeout=10)
+            response.raise_for_status()
+
+            html_content = response.text
+
+            # Parse dividend table like rains does
+            dividends = self._parse_dividends_html(html_content)
 
             logger.info(f"Retrieved {len(dividends)} dividend records for {symbol}")
             return dividends
@@ -553,8 +882,74 @@ class SinaFinanceService:
             logger.error(f"Failed to get dividends for symbol {symbol}: {e}")
             return []
 
+    def _parse_dividends_html(self, html_content: str) -> List[Dividend]:
+        """Parse dividend data from Sina HTML like rains does.
+
+        Args:
+            html_content: HTML content from Sina dividend page
+
+        Returns:
+            List of Dividend objects
+        """
+        try:
+            from bs4 import BeautifulSoup
+
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Find the dividend table like rains does (#sharebonus_1)
+            table = soup.select_one('#sharebonus_1')
+            if not table:
+                logger.warning("Dividend table not found in HTML")
+                return []
+
+            # Parse table rows like rains does
+            rows = table.select('tr')
+            if len(rows) < 2:  # Need at least header + data rows
+                logger.warning("Not enough rows in dividend table")
+                return []
+
+            dividends = []
+
+            # Skip header row, process data rows
+            for row in rows[1:]:
+                cells = row.select('td')
+                if len(cells) < 9:  # Need 9 columns like rains expects
+                    continue
+
+                try:
+                    # Extract data like rains does (9 columns per dividend record)
+                    date = cells[0].get_text().strip()
+                    shares_dividend = self._parse_financial_value(cells[1].get_text().strip()) or 0.0
+                    shares_into = self._parse_financial_value(cells[2].get_text().strip()) or 0.0
+                    money = self._parse_financial_value(cells[3].get_text().strip()) or 0.0
+                    date_dividend = cells[5].get_text().strip()
+                    date_record = cells[6].get_text().strip()
+
+                    # Create dividend record
+                    dividend = Dividend(
+                        date=date,
+                        shares_dividend=shares_dividend,
+                        shares_into=shares_into,
+                        money=money,
+                        date_dividend=date_dividend,
+                        date_record=date_record
+                    )
+
+                    dividends.append(dividend)
+
+                except (ValueError, IndexError) as e:
+                    logger.warning(f"Failed to parse dividend row: {e}")
+                    continue
+
+            return dividends
+
+        except Exception as e:
+            logger.error(f"Failed to parse dividends HTML: {e}")
+            return []
+
+
     def get_press_releases(self, symbol: str) -> List[Press]:
-        """Get company press releases/announcements.
+        """Get company press releases/announcements like rains does.
 
         Args:
             symbol: Stock symbol
@@ -565,20 +960,76 @@ class SinaFinanceService:
         try:
             code = self._normalize_symbol(symbol).replace('SH', '').replace('SZ', '').replace('BJ', '')
 
-            # Sina announcements page
-            url = f"https://vip.stock.finance.sina.com.cn/corp/view/vCB_AllNewsStock.php?symbol={code}"
+            # Sina press releases page - same as rains
+            url = f"https://vip.stock.finance.sina.com.cn/corp/go.php/vCB_AllBulletin/stockid/{code}.phtml"
 
             response = self.session.get(url, timeout=10)
             response.raise_for_status()
 
-            # Parse announcements (simplified)
-            press_releases = []
+            html_content = response.text
 
-            logger.info(f"Retrieved {len(press_releases)} press releases for {symbol}")
-            return press_releases
+            # Parse press releases like rains does
+            presses = self._parse_presses_html(html_content)
+
+            logger.info(f"Retrieved {len(presses)} press releases for {symbol}")
+            return presses
 
         except Exception as e:
             logger.error(f"Failed to get press releases for symbol {symbol}: {e}")
+            return []
+
+    def _parse_presses_html(self, html_content: str) -> List[Press]:
+        """Parse press releases from Sina HTML like rains does.
+
+        Args:
+            html_content: HTML content from Sina press releases page
+
+        Returns:
+            List of Press objects
+        """
+        try:
+            from bs4 import BeautifulSoup
+
+            soup = BeautifulSoup(html_content, 'html.parser')
+
+            # Find the press releases list like rains does (.datelist ul)
+            ul = soup.select_one('div.datelist ul')
+            if not ul:
+                logger.warning("Press releases list not found in HTML")
+                return []
+
+            presses = []
+
+            # Parse list items like rains does (3 items per press release: date, link+title, empty)
+            items = ul.find_all(recursive=False)
+            current_press = None
+
+            for i, item in enumerate(items):
+                match i % 3:
+                    case 0:  # Date
+                        if current_press:
+                            presses.append(current_press)
+                        current_press = Press(
+                            date=item.get_text().strip(),
+                            title="",
+                            url=""
+                        )
+
+                    case 1:  # Link and title
+                        if current_press:
+                            link = item.find('a')
+                            if link:
+                                current_press.url = f"https://vip.stock.finance.sina.com.cn{link.get('href')}"
+                                current_press.title = link.get_text().strip()
+
+            # Add the last press release
+            if current_press:
+                presses.append(current_press)
+
+            return presses
+
+        except Exception as e:
+            logger.error(f"Failed to parse press releases HTML: {e}")
             return []
 
     def _normalize_symbol(self, symbol: str) -> str:
@@ -625,78 +1076,3 @@ class SinaFinanceService:
 
         # Default to Shanghai for unknown codes
         return 'SH'
-
-    def _extract_from_html(self, html: str, pattern: str) -> Optional[str]:
-        """Extract text from HTML using regex pattern.
-
-        Args:
-            html: HTML content
-            pattern: Regex pattern
-
-        Returns:
-            Extracted text or None
-        """
-        match = re.search(pattern, html, re.IGNORECASE)
-        return match.group(1).strip() if match else None
-
-    def _extract_listing_date(self, html: str) -> Optional[date]:
-        """Extract listing date from HTML.
-
-        Args:
-            html: HTML content
-
-        Returns:
-            Listing date or None
-        """
-        # Look for date patterns in Chinese format - be more specific to avoid false matches
-        patterns = [
-            r'上市日期[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日',
-            r'上市时间[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日',
-            r'(\d{4})年(\d{1,2})月(\d{1,2})日.*上市',
-            r'成立日期[：:]\s*(\d{4})年(\d{1,2})月(\d{1,2})日'
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, html, re.IGNORECASE)
-            if match:
-                try:
-                    year = int(match.group(1))
-                    month = int(match.group(2))
-                    day = int(match.group(3))
-
-                    # Skip obviously wrong dates (like future dates or very old dates)
-                    from datetime import date as date_class
-                    today = date_class.today()
-                    parsed_date = date_class(year, month, day)
-
-                    if parsed_date > today or year < 1990:
-                        continue
-
-                    return parsed_date
-                except (ValueError, IndexError):
-                    continue
-
-        return None
-
-    def _extract_business_description(self, html: str) -> Optional[str]:
-        """Extract business description from HTML.
-
-        Args:
-            html: HTML content
-
-        Returns:
-            Business description or None
-        """
-        # Look for business/main business section
-        patterns = [
-            r'主营业务[：:]\s*([^<\n]+)',
-            r'经营范围[：:]\s*([^<\n]+)',
-            r'公司业务[：:]\s*([^<\n]+)'
-        ]
-
-        for pattern in patterns:
-            match = re.search(pattern, html, re.IGNORECASE)
-            if match:
-                return match.group(1).strip()
-
-        return None

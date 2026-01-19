@@ -2,34 +2,30 @@
 
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass
-from datetime import date
 
 
 @dataclass
 class Shareholder:
-    """Individual shareholder information."""
+    """Individual shareholder information like rains."""
 
     name: str
-    shares: int
-    percentage: float
-    share_type: Optional[str] = None  # e.g., "A股", "B股", "H股"
+    shares: float
+    percent: float
+    shares_type: str = ""
 
     def __post_init__(self):
         """Validate shareholder data after initialization."""
         if not self.name or not isinstance(self.name, str):
             raise ValueError("Shareholder name must be a non-empty string")
-        if self.shares < 0:
-            raise ValueError("Shares cannot be negative")
-        if not 0 <= self.percentage <= 100:
-            raise ValueError("Percentage must be between 0 and 100")
+        self.name = self.name.strip()
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert shareholder to dictionary."""
         return {
             "name": self.name,
             "shares": self.shares,
-            "percentage": self.percentage,
-            "share_type": self.share_type
+            "percent": self.percent,
+            "shares_type": self.shares_type
         }
 
     @classmethod
@@ -38,64 +34,52 @@ class Shareholder:
         return cls(
             name=data["name"],
             shares=data["shares"],
-            percentage=data["percentage"],
-            share_type=data.get("share_type")
+            percent=data["percent"],
+            shares_type=data.get("shares_type", "")
         )
 
 
 @dataclass
 class Structure:
-    """Shareholder structure information."""
+    """Shareholder structure information like rains."""
 
-    symbol: str
-    report_date: Optional[date] = None
-    total_shareholders: Optional[int] = None
-    top_10_shareholders: Optional[List[Shareholder]] = None
+    # Match rains Structure struct exactly
+    date: str
+    holders_num: Optional[float] = None
+    shares_avg: Optional[float] = None
+    holders_ten: Optional[List[Shareholder]] = None
 
     def __post_init__(self):
         """Validate structure data after initialization."""
-        if not self.symbol or not isinstance(self.symbol, str):
-            raise ValueError("Structure symbol must be a non-empty string")
-        self.symbol = self.symbol.strip()
-        if self.top_10_shareholders is None:
-            self.top_10_shareholders = []
-
-    def add_shareholder(self, shareholder: Shareholder):
-        """Add a shareholder to the top 10 list."""
-        self.top_10_shareholders.append(shareholder)
+        if not self.date or not isinstance(self.date, str):
+            raise ValueError("Structure date must be a non-empty string")
+        self.date = self.date.strip()
+        if self.holders_ten is None:
+            self.holders_ten = []
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert structure to dictionary."""
-        result = {
-            "symbol": self.symbol,
-            "total_shareholders": self.total_shareholders,
-            "top_10_shareholders": [sh.to_dict() for sh in self.top_10_shareholders]
+        return {
+            "date": self.date,
+            "holders_num": self.holders_num,
+            "shares_avg": self.shares_avg,
+            "holders_ten": [sh.to_dict() for sh in self.holders_ten]
         }
-        if self.report_date:
-            result["report_date"] = self.report_date.isoformat()
-        return result
 
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> 'Structure':
         """Create structure from dictionary."""
-        report_date = None
-        if data.get("report_date"):
-            if isinstance(data["report_date"], str):
-                report_date = date.fromisoformat(data["report_date"])
-            else:
-                report_date = data["report_date"]
-
         shareholders = []
-        if data.get("top_10_shareholders"):
-            shareholders = [Shareholder.from_dict(sh) for sh in data["top_10_shareholders"]]
+        if data.get("holders_ten"):
+            shareholders = [Shareholder.from_dict(sh) for sh in data["holders_ten"]]
 
         return cls(
-            symbol=data["symbol"],
-            report_date=report_date,
-            total_shareholders=data.get("total_shareholders"),
-            top_10_shareholders=shareholders
+            date=data["date"],
+            holders_num=data.get("holders_num"),
+            shares_avg=data.get("shares_avg"),
+            holders_ten=shareholders
         )
 
     def __str__(self) -> str:
         """String representation."""
-        return f"Structure(symbol='{self.symbol}', total_shareholders={self.total_shareholders}, top_10_count={len(self.top_10_shareholders)})"
+        return f"Structure(date='{self.date}', holders_num={self.holders_num}, holders_ten_count={len(self.holders_ten)})"
