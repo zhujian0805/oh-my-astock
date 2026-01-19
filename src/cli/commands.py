@@ -13,15 +13,13 @@ from typing import Dict, Any
 
 
 @click.group()
-@click.option('--log-level', default='INFO', help='Logging level')
+@click.option('--log-level', default='WARNING', help='Logging level')
 @click.option('--log-file', default=None, help='Log file path')
 @click.option('--debug', '-d', is_flag=True, help='Enable debug mode')
 def cli(log_level, log_file, debug):
     """Stock data management CLI."""
     if debug:
-        log_level = 'DEBUG'
-        from lib.debug import enable_debug_logging
-        enable_debug_logging()
+        log_level = 'INFO'  # Show INFO and DEBUG messages when debug flag is used
 
     setup_logging(log_level, log_file)
 

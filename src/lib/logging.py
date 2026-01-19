@@ -18,7 +18,7 @@ def setup_logging(level: Optional[str] = None, format_string: Optional[str] = No
 
     # Set default level if not provided
     if level is None:
-        level = 'INFO'
+        level = 'WARNING'
 
     # Configure root logger
     logging.basicConfig(
@@ -40,23 +40,9 @@ def get_logger(name: str, level: Optional[str] = None) -> logging.Logger:
     """
     logger = logging.getLogger(name)
 
-    # Only configure if not already configured
+    # Don't add handlers if they already exist - let the root logger handle everything
     if not logger.handlers:
-        # Set log level
-        log_level = getattr(logging, level.upper()) if level else logging.INFO
-        logger.setLevel(log_level)
-
-        # Create console handler
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(log_level)
-
-        # Create formatter
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
-        handler.setFormatter(formatter)
-
-        # Add handler to logger
-        logger.addHandler(handler)
+        # Set log level to NOTSET so it inherits from root logger
+        logger.setLevel(logging.NOTSET)
 
     return logger
