@@ -389,12 +389,13 @@ class ApiService:
                         code = str(row.get('代码', row.get('f12', ''))).strip()
                         name = str(row.get('名称', row.get('f14', ''))).strip()
 
-                        if code and name:
+                        # Only include A-share stocks (codes starting with 0, 3, 6, 8)
+                        if code and name and code.startswith(('0', '3', '6', '8')):
                             stock = Stock(code=code, name=name)
                             stocks.append(stock)
                             page_stocks += 1
                         else:
-                            logger.debug(f"Skipping stock with empty code or name: code='{code}', name='{name}'")
+                            logger.debug(f"Skipping non-A-share stock: code='{code}', name='{name}'")
                     except ValueError as e:
                         logger.warning(f"Skipping invalid stock data: {e}")
                         continue
@@ -507,7 +508,7 @@ class ApiService:
                         logger.warning(f"Separate exchange APIs also failed: {e3}")
                         logger.info("All API methods failed, falling back to sample stock data")
 
-            if api_success and stocks and len(stocks) >= 1000:  # Require at least 1000 stocks for success
+            if api_success and stocks and len(stocks) >= 5000:  # Require at least 5000 A-share stocks for success
                 # Remove duplicates before validation
                 seen_codes = set()
                 unique_stocks = []

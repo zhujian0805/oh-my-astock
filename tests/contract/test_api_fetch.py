@@ -19,8 +19,8 @@ class TestStockApiFetchContract:
         service = ApiService()
         stocks = service.fetch_stock_info()
 
-        # Should return a significant number of stocks from all regions
-        assert len(stocks) >= 1000, f"Expected at least 1000 stocks, got {len(stocks)}"
+        # Should return a significant number of A-share stocks from all regions
+        assert len(stocks) >= 5000, f"Expected at least 5000 A-share stocks, got {len(stocks)}"
         assert isinstance(stocks[0], Stock)
         assert stocks[0].code, "Stock code should not be empty"
         assert stocks[0].name, "Stock name should not be empty"
