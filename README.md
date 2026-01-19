@@ -25,7 +25,25 @@ pip install -e .
 
 ## Quick Start
 
-Get started with oh-my-astock in 3 simple steps:
+Get started with oh-my-astock in 4 simple steps:
+
+### 🛠️ Step 0: Set up Virtual Environment
+
+First, create and activate a virtual environment:
+
+**Windows:**
+```bash
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+```
+
+**Linux/macOS:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
 
 ### 🚀 Essential 3-Step Workflow
 
@@ -53,10 +71,10 @@ stocklib list-stocks --default-db --limit 10
 stocklib get-historical --default-db --stock-code "000001" --start-date "2024-01-01"
 
 # Get real-time quote
-stocklib quote --stock-codes "000001,600036"
+stocklib quote 000001,600036
 
 # Search stocks by name or code
-stocklib search --default-db --query "银行"
+stocklib search "银行"
 ```
 
 ### 🎯 Advanced Usage
@@ -87,13 +105,13 @@ stocklib sync-historical --default-db --all-stocks --limit 100
 #### Get Detailed Stock Information
 ```bash
 # Fetch company profile and financial data
-stocklib info --stock-code "000001" --info-type profile
+stocklib info 000001 --financials
 
 # Get dividend history
-stocklib info --stock-code "000001" --info-type dividends
+stocklib info 000001 --dividends
 
 # View shareholder structure
-stocklib info --stock-code "000001" --info-type structure
+stocklib info 000001 --structure
 ```
 
 #### Database Inspection
@@ -186,18 +204,31 @@ The historical data synchronization includes intelligent features:
 
 Set up a virtual environment before using the library:
 
-```bash
-# Create virtual environment (Windows)
-python -m venv "D:\venvs\stock"
+### Windows
 
-# Activate (Windows)
-D:\venvs\stock\Scripts\activate
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment
+venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 ```
 
-See `VIRTUAL_ENV_SETUP.md` for detailed setup instructions.
+### Linux/macOS
+
+```bash
+# Create virtual environment
+python3 -m venv venv
+
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
 
 ## Development
 
