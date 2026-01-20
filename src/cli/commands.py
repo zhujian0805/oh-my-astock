@@ -13,11 +13,27 @@ from typing import Dict, Any
 
 
 @click.group()
-@click.option('--log-level', default='WARNING', help='Logging level')
-@click.option('--log-file', default=None, help='Log file path')
-@click.option('--debug', '-d', is_flag=True, help='Enable debug mode')
+@click.option('--log-level', default='WARNING', help='Logging level (DEBUG, INFO, WARNING, ERROR)')
+@click.option('--log-file', default=None, help='Path to log file (optional)')
+@click.option('--debug', '-d', is_flag=True, help='Enable debug mode (sets log level to INFO)')
 def cli(log_level, log_file, debug):
-    """Stock data management CLI."""
+    """Stock data management CLI for fetching, storing, and analyzing Chinese stock market data.
+
+    This tool provides commands to:
+    - Initialize and manage DuckDB databases for stock data
+    - Fetch stock information and historical price data from APIs
+    - Search and retrieve real-time quotes
+    - Analyze company information and financial data
+
+    Use --help with any command for detailed options.
+
+    Examples:
+        stocklib init-db --default-db
+        stocklib fetch-stocks --default-db
+        stocklib sync-historical --all-stocks --default-db --max-threads 10
+        stocklib quote 000001,600000
+        stocklib info 000001 --all
+    """
     if debug:
         log_level = 'INFO'  # Show INFO and DEBUG messages when debug flag is used
 
@@ -96,9 +112,32 @@ def _process_single_stock(hist_service: HistoricalDataService, stock_code: str, 
 @click.option('--all-stocks', is_flag=True, help='Sync historical data for all stocks in database')
 @click.option('--limit', default=None, type=int, help='Limit number of stocks to process')
 @click.option('--force-full-sync', is_flag=True, help='Force full sync for all stocks (ignore existing data)')
-@click.option('--max-threads', default=10, type=int, help='Maximum number of threads for parallel processing (default: 10)')
+@click.option('--max-threads', default=10, type=int, help='Maximum number of threads for parallel processing (default: 10, recommended: 5-15)')
 def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_full_sync, max_threads):
-    """Sync historical data for stocks - smart sync that fetches missing data only."""
+    """Sync historical price data for stocks - smart incremental sync that fetches only missing data.
+
+    This command performs an intelligent sync that:
+    - Checks existing data and only fetches missing historical prices
+    - Prioritizes stocks with no historical data first
+    - Uses parallel processing for better performance
+    - Updates data incrementally to stay current
+
+    The default database path is './stock.duckdb' in the current directory.
+    Use --default-db to use the default path, or --db-path to specify a custom path.
+
+    Examples:
+        # Sync all stocks using default database
+        stocklib sync-historical --all-stocks --default-db
+
+        # Sync specific stocks with custom thread count
+        stocklib sync-historical --stock-codes 000001,600000 --max-threads 5
+
+        # Force full sync for all stocks (re-download all historical data)
+        stocklib sync-historical --all-stocks --force-full-sync --max-threads 10
+
+        # Sync first 100 stocks from database
+        stocklib sync-historical --all-stocks --limit 100
+    """
     if default_db:
         db_path = Config.get_database_path()
 
@@ -213,7 +252,23 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
 @click.option('--db-path', default=None, help='Database file path')
 @click.option('--default', is_flag=True, help='Use default database path')
 def init_db(db_path, default):
-    """Initialize the DuckDB database."""
+    """Initialize a new DuckDB database for stock data storage.
+
+    Creates the necessary tables and indexes for storing:
+    - Stock basic information
+    - Historical price data
+    - Financial metrics and metadata
+
+    The default database path is './stock.duckdb' in the current directory.
+    If the database already exists, this command does nothing.
+
+    Examples:
+        # Initialize default database
+        stocklib init-db --default-db
+
+        # Initialize custom database path
+        stocklib init-db --db-path /path/to/my/stocks.duckdb
+    """
     if default:
         db_path = Config.get_database_path()
 
@@ -246,9 +301,27 @@ def init_db(db_path, default):
 @cli.command()
 @click.option('--db-path', default=None, help='Database file path')
 @click.option('--default-db', is_flag=True, help='Use default database path')
-@click.option('--validate-only', is_flag=True, help='Only validate data, do not store')
+@click.option('--validate-only', is_flag=True, help='Only validate data, do not store (outputs JSON to stdout)')
 def fetch_stocks(db_path, default_db, validate_only):
-    """Fetch stock information from API and optionally store in database."""
+    """Fetch basic stock information from the API and store in database.
+
+    Retrieves a comprehensive list of all available stocks from the Chinese market,
+    including basic information like codes, names, market segments, etc.
+
+    This command fetches stock metadata only - use 'sync-historical' for price data.
+
+    The default database path is './stock.duckdb' in the current directory.
+
+    Examples:
+        # Fetch and store stocks in default database
+        stocklib fetch-stocks --default-db
+
+        # Validate data without storing (preview what would be fetched)
+        stocklib fetch-stocks --validate-only
+
+        # Fetch to custom database path
+        stocklib fetch-stocks --db-path /path/to/stocks.duckdb
+    """
     if default_db:
         db_path = Config.get_database_path()
 
@@ -261,10 +334,12 @@ def fetch_stocks(db_path, default_db, validate_only):
     logger = get_logger(__name__)
     logger.debug("Starting stock fetch operation")
 
-    click.echo("Fetching stock information from API...")
+    if not validate_only:
+        click.echo("Fetching stock information from API...")
     try:
         stocks = api_service.fetch_stock_info()
-        click.echo(f"Successfully fetched {len(stocks)} stocks")
+        if not validate_only:
+            click.echo(f"Successfully fetched {len(stocks)} stocks")
         logger.debug(f"API fetch completed with {len(stocks)} stocks")
     except Exception as e:
         logger.error(f"Stock fetch failed: {e}", exc_info=True)
@@ -308,9 +383,25 @@ def fetch_stocks(db_path, default_db, validate_only):
 @cli.command()
 @click.option('--db-path', default=None, help='Database file path')
 @click.option('--default-db', is_flag=True, help='Use default database path')
-@click.option('--limit', default=None, type=int, help='Limit number of stocks to return')
+@click.option('--limit', default=None, type=int, help='Limit number of stocks to return (default: all)')
 def list_stocks(db_path, default_db, limit):
-    """List stocks from the database."""
+    """List stocks stored in the database.
+
+    Outputs stock information as JSON array to stdout. Each stock object
+    contains basic information like code, name, market, etc.
+
+    The default database path is './stock.duckdb' in the current directory.
+
+    Examples:
+        # List all stocks from default database
+        stocklib list-stocks --default-db
+
+        # List first 10 stocks
+        stocklib list-stocks --default-db --limit 10
+
+        # List from custom database
+        stocklib list-stocks --db-path /path/to/stocks.duckdb --limit 5
+    """
     if default_db:
         db_path = Config.get_database_path()
 
@@ -342,7 +433,20 @@ def list_stocks(db_path, default_db, limit):
 @click.option('--db-path', default=None, help='Database file path')
 @click.option('--default-db', is_flag=True, help='Use default database path')
 def list_tables(db_path, default_db):
-    """List all tables in the database."""
+    """List all tables in the database.
+
+    Outputs table names as JSON array to stdout. Useful for checking
+    database structure and available data.
+
+    The default database path is './stock.duckdb' in the current directory.
+
+    Examples:
+        # List tables in default database
+        stocklib list-tables --default-db
+
+        # List tables in custom database
+        stocklib list-tables --db-path /path/to/stocks.duckdb
+    """
     if default_db:
         db_path = Config.get_database_path()
 
@@ -368,15 +472,35 @@ def list_tables(db_path, default_db):
 
 
 @cli.command()
+@click.argument('stock_code')
 @click.option('--db-path', default=None, help='Database file path')
 @click.option('--default-db', is_flag=True, help='Use default database path')
-@click.option('--stock-code', required=True, help='Stock code to get historical data for')
 @click.option('--start-date', default=None, help='Start date filter in YYYY-MM-DD format')
 @click.option('--end-date', default=None, help='End date filter in YYYY-MM-DD format')
-@click.option('--limit', default=None, type=int, help='Limit number of records to return')
-@click.option('--format', default='json', type=click.Choice(['json', 'table']), help='Output format')
+@click.option('--limit', default=None, type=int, help='Limit number of records to return (default: all, most recent first)')
+@click.option('--format', default='json', type=click.Choice(['json', 'table']), help='Output format: json or table')
 def get_historical(db_path, default_db, stock_code, start_date, end_date, limit, format):
-    """Get historical data for a stock from the database."""
+    """Retrieve historical price data for a specific stock from the database.
+
+    Outputs historical price data as JSON array or formatted table.
+    Data includes open/high/low/close prices, volume, turnover, and technical indicators.
+
+    The default database path is './stock.duckdb' in the current directory.
+    Results are ordered by date (most recent first) unless limited.
+
+    Examples:
+        # Get all historical data for a stock as JSON
+        stocklib get-historical 000001 --default-db
+
+        # Get recent data in table format
+        stocklib get-historical 600000 --format table --limit 10
+
+        # Get data for specific date range
+        stocklib get-historical 000002 --start-date 2024-01-01 --end-date 2024-12-31
+
+        # Get data from custom database
+        stocklib get-historical 000001 --db-path /path/to/stocks.duckdb --limit 100
+    """
     if default_db:
         db_path = Config.get_database_path()
 
@@ -430,9 +554,23 @@ def get_historical(db_path, default_db, stock_code, start_date, end_date, limit,
 
 @cli.command()
 @click.argument('query')
-@click.option('--limit', '-l', default=10, type=int, help='Limit number of results to return')
+@click.option('--limit', '-l', default=10, type=int, help='Limit number of results to return (default: 10)')
 def search(query, limit):
-    """Search for stocks by code, name, or pinyin."""
+    """Search for stocks by code, name, or pinyin.
+
+    Searches across stock codes, company names, and pinyin abbreviations.
+    Returns up to the specified limit of matching results in a formatted table.
+
+    Examples:
+        # Search for stocks with 'ping' in name/code
+        stocklib search ping
+
+        # Search for specific stock code
+        stocklib search 000001
+
+        # Get more results
+        stocklib search bank --limit 20
+    """
     logger = get_logger(__name__)
 
     try:
@@ -466,10 +604,26 @@ def search(query, limit):
 @cli.command()
 @click.argument('symbol')
 @click.option('--no-check', '-n', is_flag=True, help='Do not validate symbol format')
-@click.option('--realtime', '-r', is_flag=True, help='Enable real-time quote updates')
+@click.option('--realtime', '-r', is_flag=True, help='Enable real-time quote updates (not implemented)')
 @click.option('--multiline', '-m', is_flag=True, help='Multi-line display for real-time quotes (single symbol only)')
 def quote(symbol, no_check, realtime, multiline):
-    """Get real-time quote for a stock."""
+    """Get real-time stock quotes.
+
+    Retrieves current market data for one or more stocks.
+    Supports multiple symbols separated by commas.
+
+    Note: Real-time functionality is not yet implemented.
+
+    Examples:
+        # Get quote for single stock
+        stocklib quote 000001
+
+        # Get quotes for multiple stocks
+        stocklib quote 000001,600000,000002
+
+        # Skip symbol validation
+        stocklib quote ABC123 --no-check
+    """
     logger = get_logger(__name__)
 
     try:
@@ -520,13 +674,36 @@ def quote(symbol, no_check, realtime, multiline):
 
 @cli.command()
 @click.argument('symbol')
-@click.option('--all', '-a', is_flag=True, help='Include all available information')
+@click.option('--all', '-a', is_flag=True, help='Include all available information (profile + financials + structure + dividends + press)')
 @click.option('--financials', '-f', is_flag=True, help='Include financial data')
 @click.option('--structure', '-s', is_flag=True, help='Include shareholder structure')
 @click.option('--dividends', is_flag=True, help='Include dividend history')
 @click.option('--presses', '-p', is_flag=True, help='Include company announcements')
 def info(symbol, all, financials, structure, dividends, presses):
-    """Get detailed information about a stock."""
+    """Get detailed information about a stock.
+
+    Displays comprehensive company information including:
+    - Basic profile (name, industry, market cap, etc.)
+    - Financial metrics (revenue, profit, etc.) with --financials or --all
+    - Shareholder structure with --structure or --all
+    - Dividend history with --dividends or --all
+    - Recent press releases with --presses or --all
+
+    Use --all to get complete information, or specify individual sections.
+
+    Examples:
+        # Get basic company profile
+        stocklib info 000001
+
+        # Get all available information
+        stocklib info 600000 --all
+
+        # Get only financial data
+        stocklib info 000002 --financials
+
+        # Get profile and shareholder structure
+        stocklib info 000001 --structure
+    """
     logger = get_logger(__name__)
 
     try:

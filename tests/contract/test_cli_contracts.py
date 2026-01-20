@@ -119,7 +119,7 @@ class TestCliContract:
             runner.invoke(cli, ["fetch-stocks", "--db-path", db_path])
 
             # Try to get historical data (may not have any, but should not crash)
-            result = runner.invoke(cli, ["get-historical", "--db-path", db_path, "--stock-code", "000001"])
+            result = runner.invoke(cli, ["get-historical", "000001", "--db-path", db_path])
 
             # Should not crash, even if no data
             assert result.exit_code == 0
