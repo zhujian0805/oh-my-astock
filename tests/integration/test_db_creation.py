@@ -1,6 +1,5 @@
 """Integration tests for database creation and basic operations."""
 
-import pytest
 import tempfile
 import os
 from services.database_service import DatabaseService

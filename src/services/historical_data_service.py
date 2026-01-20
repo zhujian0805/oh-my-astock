@@ -2,12 +2,12 @@
 
 import akshare as ak
 import pandas as pd
-from typing import Optional, List, Dict, Any, Tuple
+from typing import Optional, List, Dict, Tuple
 from datetime import datetime, timedelta
 from models.database import DatabaseConnection
 from lib.config import Config
 from lib.logging import get_logger
-from lib.debug import debug_metrics, timed_operation, log_data_validation
+from lib.debug import timed_operation
 
 
 logger = get_logger(__name__)

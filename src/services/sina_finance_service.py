@@ -1,16 +1,15 @@
 """Sina Finance API service for fetching stock data."""
 
 import requests
-import json
 import re
 import math
 from typing import List, Dict, Any, Optional
-from datetime import datetime, date
+from datetime import datetime
 from urllib.parse import quote
 from models.quote import Quote
 from models.profile import Profile
 from models.financial import Financial
-from models.structure import Structure, Shareholder
+from models.structure import Structure
 from models.dividend import Dividend
 from models.press import Press
 from lib.logging import get_logger

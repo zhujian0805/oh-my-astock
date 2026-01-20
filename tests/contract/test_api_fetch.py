@@ -1,7 +1,6 @@
 """Contract tests for stock API fetching."""
 
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from services.api_service import ApiService
 from models.stock import Stock
 

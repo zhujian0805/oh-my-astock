@@ -5,7 +5,7 @@ import requests
 import time
 import json
 import io
-from typing import List, Dict, Any
+from typing import List
 from models.stock import Stock
 from lib.logging import get_logger
 from lib.debug import debug_metrics, timed_operation, log_data_validation
@@ -79,7 +79,6 @@ class ApiService:
             Exception: If API calls fail
         """
         import requests
-        import pandas as pd
 
         stocks = []
         session = requests.Session()

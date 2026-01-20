@@ -1,6 +1,5 @@
 """Contract tests for database initialization."""
 
-import pytest
 import tempfile
 import os
 from services.database_service import DatabaseService

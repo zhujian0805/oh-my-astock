@@ -7,7 +7,7 @@ from models.database import DatabaseConnection
 from models.stock import Stock
 from lib.config import Config
 from lib.logging import get_logger
-from lib.debug import debug_metrics, timed_operation, debug_context
+from lib.debug import timed_operation
 
 
 logger = get_logger(__name__)

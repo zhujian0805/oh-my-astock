@@ -68,7 +68,7 @@ That's it! You now have a complete Chinese stock database with historical data.
 stocklib list-stocks --default-db --limit 10
 
 # Get historical data for specific stock (e.g., Ping An Bank - 000001)
-stocklib get-historical --default-db --stock-code "000001" --start-date "2024-01-01"
+stocklib get-historical 000001 --default-db --start-date "2024-01-01"
 
 # Get real-time quote
 stocklib quote 000001,600036
@@ -193,12 +193,15 @@ The historical data synchronization includes intelligent features:
 
 ## Requirements
 
-- Python 3.8+
+- **Python 3.10+** (code uses `match` statement and modern f-string syntax)
 - DuckDB >= 0.8.0
 - akshare >= 1.10.0
 - click >= 8.0.0
 - pandas
 - requests
+- pytest >= 7.0.0 (for testing)
+- pytest-cov >= 4.0.0 (for coverage)
+- ruff (for linting and formatting)
 
 ## Virtual Environment Setup
 
@@ -234,17 +237,45 @@ pip install -r requirements.txt
 
 ### Testing
 
+Run tests from the **project root directory**:
+
 ```bash
-# Run all tests
+# Run all tests (from project root)
 pytest
 
-# Run with coverage
+# Run with coverage report
 pytest --cov=src --cov-report=html
 
 # Run specific test types
-pytest tests/contract/    # Contract tests
-pytest tests/integration/ # Integration tests
+pytest tests/contract/           # Contract tests only
+pytest tests/integration/        # Integration tests only
+
+# Run a specific test file
+pytest tests/contract/test_lib_utils.py -v
+
+# Run with verbose output
+pytest -v
 ```
+
+### Code Quality
+
+Check code quality with ruff:
+
+```bash
+# Check all code for issues
+ruff check .
+
+# Check and auto-fix issues
+ruff check . --fix
+
+# Check specific directory
+ruff check src/
+
+# Format code
+ruff format .
+```
+
+**Note:** Current code uses Python 3.10+ features (`match` statement) which may cause syntax errors if targeting Python 3.8.
 
 ### Project Structure
 

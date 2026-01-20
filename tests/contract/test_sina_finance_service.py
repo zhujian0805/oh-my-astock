@@ -1,11 +1,7 @@
 """Contract tests for SinaFinanceService."""
 
-import pytest
-from unittest.mock import Mock, patch, MagicMock
-from datetime import datetime, date
-from models.quote import Quote
-from models.profile import Profile
-from models.structure import Structure, Shareholder
+from unittest.mock import Mock, patch
+from datetime import date
 from services.sina_finance_service import SinaFinanceService
 
 

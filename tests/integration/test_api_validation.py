@@ -1,6 +1,5 @@
 """Integration tests for API data validation."""
 
-import pytest
 from unittest.mock import patch, MagicMock
 from services.api_service import ApiService
 from models.stock import Stock

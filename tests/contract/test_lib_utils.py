@@ -1,6 +1,5 @@
 """Contract tests for lib utilities."""
 
-import pytest
 import os
 import tempfile
 from pathlib import Path

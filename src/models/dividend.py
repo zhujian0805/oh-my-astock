@@ -1,6 +1,6 @@
 """Dividend data model."""
 
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 from dataclasses import dataclass
 
 
