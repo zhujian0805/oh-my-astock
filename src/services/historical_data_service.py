@@ -1,5 +1,83 @@
 """Historical data service for fetching and managing stock historical data."""
 
+# Configure SSL BEFORE importing akshare
+import os
+import ssl
+import urllib3
+import warnings
+
+# Set environment variables BEFORE importing any HTTP libraries
+ssl_env_vars = [
+    ('REQUESTS_CA_BUNDLE', ''),
+    ('CURL_CA_BUNDLE', ''),
+    ('SSL_CERT_FILE', ''),
+    ('SSL_CERT_DIR', ''),
+    ('PYTHONHTTPSVERIFY', '0'),
+    ('REQUESTS_INSECURE_SSL', '1')
+]
+
+for var, value in ssl_env_vars:
+    os.environ[var] = value
+
+# Disable SSL warnings
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+
+# Configure SSL context globally
+ssl_context = ssl.create_default_context()
+ssl_context.check_hostname = False
+ssl_context.verify_mode = ssl.CERT_NONE
+
+# Monkey patch SSL contexts
+ssl._create_default_https_context = lambda: ssl_context
+ssl._create_unverified_context = lambda: ssl_context
+
+# Also try to patch the stdlib SSL module
+try:
+    import _ssl
+    if hasattr(_ssl, 'SSLContext'):
+        _ssl.SSLContext.check_hostname = False
+        _ssl.SSLContext.verify_mode = ssl.CERT_NONE
+except:
+    pass
+
+# Import and patch HTTP libraries BEFORE akshare
+try:
+    import httpx
+    httpx._config.DEFAULT_SSL_CONFIG = httpx.SSLConfig(verify=False, cert=None, key=None)
+except ImportError:
+    pass
+
+# Patch urllib3
+try:
+    import urllib3
+    original_init = urllib3.PoolManager.__init__
+
+    def patched_init(self, *args, **kwargs):
+        # Force disable SSL verification
+        kwargs['cert_reqs'] = 'CERT_NONE'
+        kwargs['assert_hostname'] = False
+        return original_init(self, *args, **kwargs)
+
+    urllib3.PoolManager.__init__ = patched_init
+except Exception:
+    pass
+
+# Patch requests
+try:
+    import requests
+    original_request = requests.Session.request
+
+    def patched_request(self, method, url, **kwargs):
+        # Force disable SSL verification for all requests
+        kwargs['verify'] = False
+        return original_request(self, method, url, **kwargs)
+
+    requests.Session.request = patched_request
+except Exception:
+    pass
+
+# NOW import akshare after SSL is configured
 import akshare as ak
 import pandas as pd
 from typing import Optional, List, Dict, Tuple
@@ -24,107 +102,6 @@ class HistoricalDataService:
         """
         self.db_path = Config.get_database_path(db_path)
         self.db_connection = DatabaseConnection(self.db_path)
-        self._configure_ssl()
-
-    def _configure_ssl(self):
-        """Configure SSL settings to handle certificate issues."""
-        import os
-
-        # Set environment variables BEFORE importing any HTTP libraries
-        ssl_env_vars = [
-            ('REQUESTS_CA_BUNDLE', ''),
-            ('CURL_CA_BUNDLE', ''),
-            ('SSL_CERT_FILE', ''),
-            ('SSL_CERT_DIR', ''),
-            ('PYTHONHTTPSVERIFY', '0'),
-            ('REQUESTS_INSECURE_SSL', '1')
-        ]
-
-        for var, value in ssl_env_vars:
-            os.environ[var] = value
-
-        # Import and configure SSL
-        self._configure_ssl_context()
-
-        # Import and patch HTTP libraries
-        self._patch_httpx_ssl()
-        self._patch_urllib3()
-        self._patch_requests()
-
-    def _configure_ssl_context(self):
-        """Configure SSL context globally."""
-        try:
-            import ssl
-            import warnings
-            import urllib3
-
-            # Disable SSL warnings
-            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-            warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-
-            # Create and set unverified SSL context
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-
-            # Monkey patch SSL contexts
-            ssl._create_default_https_context = lambda: ssl_context
-            ssl._create_unverified_context = lambda: ssl_context
-
-            # Also try to patch the stdlib SSL module
-            import _ssl
-            if hasattr(_ssl, 'SSLContext'):
-                _ssl.SSLContext.check_hostname = False
-                _ssl.SSLContext.verify_mode = ssl.CERT_NONE
-
-            logger.debug("Successfully configured SSL context")
-        except Exception as e:
-            logger.debug(f"Could not configure SSL context: {e}")
-
-    def _patch_httpx_ssl(self):
-        """Patch httpx library if available (akshare may use it)."""
-        try:
-            import httpx
-            # Disable SSL verification for httpx
-            httpx._config.DEFAULT_SSL_CONFIG = httpx.SSLConfig(verify=False, cert=None, key=None)
-            logger.debug("Successfully patched httpx SSL")
-        except ImportError:
-            logger.debug("httpx not available, skipping httpx SSL patch")
-        except Exception as e:
-            logger.debug(f"Could not patch httpx: {e}")
-
-    def _patch_urllib3(self):
-        """Monkey patch urllib3 to disable SSL verification."""
-        try:
-            import urllib3
-            original_init = urllib3.PoolManager.__init__
-
-            def patched_init(self, *args, **kwargs):
-                # Force disable SSL verification
-                kwargs['cert_reqs'] = 'CERT_NONE'
-                kwargs['assert_hostname'] = False
-                return original_init(self, *args, **kwargs)
-
-            urllib3.PoolManager.__init__ = patched_init
-            logger.debug("Successfully patched urllib3 PoolManager")
-        except Exception as e:
-            logger.debug(f"Could not patch urllib3: {e}")
-
-    def _patch_requests(self):
-        """Monkey patch requests to disable SSL verification."""
-        try:
-            import requests
-            original_request = requests.Session.request
-
-            def patched_request(self, method, url, **kwargs):
-                # Force disable SSL verification for all requests
-                kwargs['verify'] = False
-                return original_request(self, method, url, **kwargs)
-
-            requests.Session.request = patched_request
-            logger.debug("Successfully patched requests library")
-        except Exception as e:
-            logger.debug(f"Could not patch requests: {e}")
 
     @timed_operation("historical_data_table_creation")
     def create_historical_data_table(self) -> bool:
@@ -170,20 +147,22 @@ class HistoricalDataService:
 
     @timed_operation("historical_data_fetch")
     def fetch_historical_data(self, stock_code: str, start_date: Optional[str] = None,
-                            end_date: Optional[str] = None, max_retries: int = 3) -> Optional[pd.DataFrame]:
+                            end_date: Optional[str] = None, max_retries: int = 5) -> Optional[pd.DataFrame]:
         """Fetch historical data for a specific stock.
 
         Args:
             stock_code: Stock code to fetch data for
             start_date: Start date in YYYYMMDD format (optional)
             end_date: End date in YYYYMMDD format (optional)
-            max_retries: Maximum number of retry attempts for SSL failures
+            max_retries: Maximum number of retry attempts for network/API failures
 
         Returns:
             DataFrame with historical data or None if failed
         """
         import time
         import ssl
+        import requests
+        from urllib3.exceptions import HTTPError
 
         for attempt in range(max_retries + 1):
             try:
@@ -226,14 +205,18 @@ class HistoricalDataService:
                     logger.warning(f"No historical data found for {stock_code}")
                     return None
 
-            except ssl.SSLError as e:
+            except (ssl.SSLError, requests.exceptions.SSLError, requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout, requests.exceptions.RequestException,
+                    HTTPError, ConnectionError, TimeoutError, OSError) as e:
                 if attempt < max_retries:
-                    wait_time = 2 ** attempt  # Exponential backoff: 1, 2, 4 seconds
-                    logger.warning(f"SSL error for {stock_code} (attempt {attempt + 1}): {e}. Retrying in {wait_time}s...")
+                    # Fixed 30-second delay between retries
+                    wait_time = 30.0
+
+                    logger.warning(f"Network/API error for {stock_code} (attempt {attempt + 1}): {e}. Retrying in {wait_time:.1f}s...")
                     time.sleep(wait_time)
                     continue
                 else:
-                    logger.error(f"SSL error for {stock_code} after {max_retries + 1} attempts: {e}")
+                    logger.error(f"Network/API error for {stock_code} after {max_retries + 1} attempts: {e}")
                     return None
 
             except Exception as e:
