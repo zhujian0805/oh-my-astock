@@ -195,37 +195,72 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
     click.echo(f"Starting smart sync for {len(codes_to_process)} stocks using {max_threads} threads...")
     results = {}
 
-    # Process stocks in parallel
+    # Process stocks in parallel with better error handling
+    failed_stocks = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
-        # Submit all tasks
-        future_to_stock = {
-            executor.submit(_process_single_stock, hist_service, stock_code, force_full_sync): stock_code
-            for stock_code in codes_to_process
-        }
+            # Submit all tasks
+            future_to_stock = {
+                executor.submit(_process_single_stock, hist_service, stock_code, force_full_sync): stock_code
+                for stock_code in codes_to_process
+            }
 
-        # Process results as they complete
-        completed = 0
-        for future in concurrent.futures.as_completed(future_to_stock):
-            stock_code = future_to_stock[future]
-            completed += 1
-            click.echo(f"[{completed}/{len(codes_to_process)}] Completed {stock_code}")
+            # Process results as they complete
+            completed = 0
+            for future in concurrent.futures.as_completed(future_to_stock):
+                stock_code = future_to_stock[future]
+                completed += 1
+                click.echo(f"[{completed}/{len(codes_to_process)}] Completed {stock_code}")
 
-            try:
-                result = future.result()
-                results[stock_code] = result
+                try:
+                    result = future.result()
+                    results[stock_code] = result
 
-                if result['success']:
-                    if result['count'] > 0:
-                        click.echo(f"  [OK] {result['action']}: {result['count']} records stored")
+                    if result['success']:
+                        if result['count'] > 0:
+                            click.echo(f"  [OK] {result['action']}: {result['count']} records stored")
+                        else:
+                            click.echo(f"  [OK] {result['action']}")
                     else:
-                        click.echo(f"  [OK] {result['action']}")
-                else:
-                    click.echo(f"  [FAIL] Failed: {result.get('error', 'Unknown error')}")
+                        failed_stocks.append(stock_code)
+                        click.echo(f"  [FAIL] Failed: {result.get('error', 'Unknown error')}")
 
-            except Exception as e:
-                logger.error(f"Unexpected error processing {stock_code}: {e}")
-                results[stock_code] = {'count': 0, 'action': 'failed'}
-                click.echo(f"  [ERROR] Unexpected error: {e}")
+                except Exception as e:
+                    logger.error(f"Unexpected error processing {stock_code}: {e}")
+                    results[stock_code] = {'count': 0, 'action': 'failed'}
+                    failed_stocks.append(stock_code)
+                    click.echo(f"  [ERROR] Unexpected error: {e}")
+
+            # Implement retry logic for failed stocks
+            if failed_stocks and not force_full_sync:
+                click.echo(f"\nRetrying {len(failed_stocks)} failed stocks...")
+                retry_results = {}
+
+                with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_threads, 3)) as executor:
+                    # Submit retry tasks with lower thread count
+                    future_to_retry_stock = {
+                        executor.submit(_process_single_stock, hist_service, stock_code, force_full_sync): stock_code
+                        for stock_code in failed_stocks
+                    }
+
+                    for future in concurrent.futures.as_completed(future_to_retry_stock):
+                        stock_code = future_to_retry_stock[future]
+                        try:
+                            result = future.result()
+                            retry_results[stock_code] = result
+
+                            if result['success']:
+                                if result['count'] > 0:
+                                    click.echo(f"  [RETRY OK] {result['action']}: {result['count']} records stored")
+                                else:
+                                    click.echo(f"  [RETRY OK] {result['action']}")
+                                # Update original results
+                                results[stock_code] = result
+                            else:
+                                click.echo(f"  [RETRY FAIL] Still failed: {result.get('error', 'Unknown error')}")
+
+                        except Exception as e:
+                            logger.error(f"Retry failed for {stock_code}: {e}")
+                            click.echo(f"  [RETRY ERROR] {e}")
 
     # Generate summary
     total_processed = len(results)

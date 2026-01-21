@@ -164,64 +164,150 @@ class HistoricalDataService:
         import requests
         from urllib3.exceptions import HTTPError
 
+        # Define the APIs to try in order
+        apis_to_try = [
+            ('stock_zh_a_hist', ak.stock_zh_a_hist),
+            ('stock_zh_a_daily', ak.stock_zh_a_daily),
+            ('stock_zh_a_hist_tx', ak.stock_zh_a_hist_tx)
+        ]
+
         for attempt in range(max_retries + 1):
-            try:
-                logger.info(f"Fetching historical data for {stock_code} from {start_date} to {end_date} (attempt {attempt + 1}/{max_retries + 1})")
+            for api_name, api_function in apis_to_try:
+                try:
+                    logger.info(f"Fetching historical data for {stock_code} using {api_name} from {start_date} to {end_date} (attempt {attempt + 1}/{max_retries + 1})")
 
-                # Use akshare to fetch historical data
-                df = ak.stock_zh_a_hist(
-                    symbol=stock_code,
-                    period="daily",
-                    start_date=start_date or "19700101",
-                    end_date=end_date or "21000101",
-                    adjust=""
-                )
+                    # Call the API function
+                    if api_name == 'stock_zh_a_hist':
+                        df = api_function(
+                            symbol=stock_code,
+                            period="daily",
+                            start_date=start_date or "19700101",
+                            end_date=end_date or "21000101",
+                            adjust=""
+                        )
+                    elif api_name == 'stock_zh_a_daily':
+                        # stock_zh_a_daily typically takes symbol and adjust parameters
+                        df = api_function(
+                            symbol=stock_code,
+                            adjust=""
+                        )
+                    elif api_name == 'stock_zh_a_hist_tx':
+                        # stock_zh_a_hist_tx typically takes symbol, start_date, end_date
+                        df = api_function(
+                            symbol=stock_code,
+                            start_date=start_date or "19700101",
+                            end_date=end_date or "21000101"
+                        )
 
-                if df is not None and not df.empty:
-                    # Rename columns to match our schema
-                    column_mapping = {
-                        '日期': 'date',
-                        '开盘': 'open_price',
-                        '收盘': 'close_price',
-                        '最高': 'high_price',
-                        '最低': 'low_price',
-                        '成交量': 'volume',
-                        '成交额': 'turnover',
-                        '振幅': 'amplitude',
-                        '涨跌幅': 'price_change_rate',
-                        '涨跌额': 'price_change',
-                        '换手率': 'turnover_rate'
-                    }
+                    if df is not None and not df.empty:
+                        # Validate that we have some data to work with
+                        logger.debug(f"Raw API response columns: {list(df.columns)}")
+                        logger.debug(f"Raw API response shape: {df.shape}")
+                        logger.debug(f"First row sample: {df.iloc[0].to_dict() if len(df) > 0 else 'No rows'}")
 
-                    df = df.rename(columns=column_mapping)
+                        # Rename columns to match our schema
+                        column_mapping = {
+                            '日期': 'date',
+                            '开盘': 'open_price',
+                            '收盘': 'close_price',
+                            '最高': 'high_price',
+                            '最低': 'low_price',
+                            '成交量': 'volume',
+                            '成交额': 'turnover',
+                            '振幅': 'amplitude',
+                            '涨跌幅': 'price_change_rate',
+                            '涨跌额': 'price_change',
+                            '换手率': 'turnover_rate'
+                        }
 
-                    # Ensure date column is datetime
-                    if 'date' in df.columns:
-                        df['date'] = pd.to_datetime(df['date'])
+                        # Only rename columns that exist in the DataFrame
+                        existing_columns = [col for col in column_mapping.keys() if col in df.columns]
+                        if existing_columns:
+                            df = df.rename(columns={col: column_mapping[col] for col in existing_columns})
+                            logger.debug(f"Renamed columns: {existing_columns}")
+                        else:
+                            logger.warning(f"No expected columns found in API response for {api_name}. Available columns: {list(df.columns)}")
+                            continue
 
-                    logger.info(f"Successfully fetched {len(df)} records for {stock_code}")
-                    return df
-                else:
-                    logger.warning(f"No historical data found for {stock_code}")
-                    return None
+                        # Ensure date column is datetime if it exists
+                        if 'date' in df.columns:
+                            try:
+                                df['date'] = pd.to_datetime(df['date'])
+                                logger.debug(f"Converted date column to datetime, {len(df)} rows")
+                            except Exception as e:
+                                logger.warning(f"Failed to convert date column to datetime: {e}")
+                                # Try to drop rows with invalid dates
+                                df = df.dropna(subset=['date'])
+                                if df.empty:
+                                    logger.warning("No valid dates found after cleaning")
+                                    continue
+                        else:
+                            logger.warning(f"No date column found after renaming for {api_name}")
+                            continue
 
-            except (ssl.SSLError, requests.exceptions.SSLError, requests.exceptions.ConnectionError,
-                    requests.exceptions.Timeout, requests.exceptions.RequestException,
-                    HTTPError, ConnectionError, TimeoutError, OSError) as e:
-                if attempt < max_retries:
-                    # Fixed 30-second delay between retries
-                    wait_time = 30.0
+                        logger.info(f"Successfully fetched {len(df)} records for {stock_code} using {api_name}")
+                        return df
+                    else:
+                        logger.warning(f"No historical data found for {stock_code} using {api_name}")
+                        continue  # Try next API
 
-                    logger.warning(f"Network/API error for {stock_code} (attempt {attempt + 1}): {e}. Retrying in {wait_time:.1f}s...")
-                    time.sleep(wait_time)
+                except (ssl.SSLError, requests.exceptions.SSLError, requests.exceptions.ConnectionError,
+                        requests.exceptions.Timeout, requests.exceptions.RequestException,
+                        HTTPError, ConnectionError, TimeoutError, OSError) as e:
+                    if attempt < max_retries:
+                        # Fixed 30-second delay between retries
+                        wait_time = 30.0
+
+                        logger.warning(f"Network/API error for {stock_code} using {api_name} (attempt {attempt + 1}): {e}. Retrying in {wait_time:.1f}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Network/API error for {stock_code} using {api_name} after {max_retries + 1} attempts: {e}")
+                        return None
+
+                except (ssl.SSLError, requests.exceptions.SSLError, requests.exceptions.ConnectionError,
+                        requests.exceptions.Timeout, requests.exceptions.RequestException,
+                        HTTPError, ConnectionError, TimeoutError, OSError) as e:
+                    if attempt < max_retries:
+                        # Exponential backoff with jitter to avoid overwhelming the API
+                        base_wait = 10.0
+                        wait_time = base_wait * (2 ** attempt) + (time.time() % 5)  # Add jitter
+
+                        logger.warning(f"Network/API error for {stock_code} using {api_name} (attempt {attempt + 1}): {e}. Retrying in {wait_time:.1f}s...")
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        logger.error(f"Network/API error for {stock_code} using {api_name} after {max_retries + 1} attempts: {e}")
+                        return None
+
+                except Exception as e:
+                    # Add rate limiting detection
+                    error_str = str(e).lower()
+                    if any(keyword in error_str for keyword in ['rate limit', 'too many requests', '429', 'throttle']):
+                        if attempt < max_retries:
+                            # Longer wait for rate limiting
+                            wait_time = 60.0 * (attempt + 1)  # 60s, 120s, etc.
+                            logger.warning(f"Rate limit detected for {stock_code} using {api_name}. Waiting {wait_time:.1f}s before retry...")
+                            time.sleep(wait_time)
+                            continue
+                        else:
+                            logger.error(f"Rate limit exceeded for {stock_code} using {api_name} after {max_retries + 1} attempts")
+                            return None
+
+                    logger.warning(f"Failed to fetch historical data for {stock_code} using {api_name}: {e}")
+                    # Continue to next API instead of failing completely
                     continue
-                else:
-                    logger.error(f"Network/API error for {stock_code} after {max_retries + 1} attempts: {e}")
-                    return None
 
-            except Exception as e:
-                logger.error(f"Failed to fetch historical data for {stock_code}: {e}")
+            # If all APIs failed for this attempt, and we have retries left, wait and try again
+            if attempt < max_retries:
+                wait_time = 30.0
+                logger.warning(f"All APIs failed for {stock_code} (attempt {attempt + 1}). Retrying all APIs in {wait_time:.1f}s...")
+                time.sleep(wait_time)
+            else:
+                logger.error(f"All APIs failed for {stock_code} after {max_retries + 1} attempts")
                 return None
+
+        return None
 
     def _convert_row_to_values(self, stock_code: str, row) -> tuple:
         """Convert a DataFrame row to database values tuple.
@@ -234,10 +320,34 @@ class HistoricalDataService:
             Tuple of values for database insertion
         """
         def safe_float(value, default=0.0):
-            return float(value) if pd.notna(value) else default
+            """Safely convert value to float, handling various edge cases."""
+            if pd.isna(value) or value is None:
+                return default
+            try:
+                # Handle string values that might be special markers
+                if isinstance(value, str):
+                    value = value.strip()
+                    if value == '' or value.lower() in ['n/a', 'null', 'none', 'nan', 'i']:
+                        return default
+                return float(value)
+            except (ValueError, TypeError):
+                logger.debug(f"Could not convert '{value}' to float, using default {default}")
+                return default
 
         def safe_int(value, default=0):
-            return int(value) if pd.notna(value) else default
+            """Safely convert value to int, handling various edge cases."""
+            if pd.isna(value) or value is None:
+                return default
+            try:
+                # Handle string values that might be special markers
+                if isinstance(value, str):
+                    value = value.strip()
+                    if value == '' or value.lower() in ['n/a', 'null', 'none', 'nan', 'i']:
+                        return default
+                return int(float(value))  # Convert through float first to handle '1.0' strings
+            except (ValueError, TypeError):
+                logger.debug(f"Could not convert '{value}' to int, using default {default}")
+                return default
 
         return (
             row['date'].date() if hasattr(row['date'], 'date') else row['date'],
