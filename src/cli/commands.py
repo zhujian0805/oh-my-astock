@@ -40,7 +40,7 @@ def cli(log_level, log_file, debug):
     setup_logging(log_level, log_file)
 
 
-def _setup_database_and_table(db_path: str, hist_service: HistoricalDataService) -> bool:
+def _setup_database_and_table(db_path: str) -> bool:
     """Helper function to set up database and ensure historical data table exists."""
     db_service = DatabaseService(db_path)
     if not db_service.database_exists():
@@ -49,6 +49,7 @@ def _setup_database_and_table(db_path: str, hist_service: HistoricalDataService)
             click.echo("Database initialization failed", err=True)
             return False
 
+    hist_service = HistoricalDataService(db_path)
     if not hist_service.create_historical_data_table():
         click.echo("Failed to create historical data table", err=True)
         return False
@@ -56,11 +57,11 @@ def _setup_database_and_table(db_path: str, hist_service: HistoricalDataService)
     return True
 
 
-def _process_single_stock(hist_service: HistoricalDataService, stock_code: str, force_full_sync: bool) -> Dict[str, Any]:
+def _process_single_stock(db_path: str, stock_code: str, force_full_sync: bool) -> Dict[str, Any]:
     """Process a single stock for historical data sync.
 
     Args:
-        hist_service: Historical data service instance
+        db_path: Database path (for creating thread-local connection)
         stock_code: Stock code to process
         force_full_sync: Whether to force full sync
 
@@ -70,10 +71,13 @@ def _process_single_stock(hist_service: HistoricalDataService, stock_code: str, 
     logger = get_logger(__name__)
 
     try:
+        # Create a new service instance with its own connection for this thread
+        hist_service = HistoricalDataService(db_path)
+
         if force_full_sync:
             # Force full sync - fetch all historical data
             logger.info(f"Force full sync for {stock_code}")
-            count = hist_service.fetch_and_store_historical_data(stock_code)
+            data = hist_service.fetch_historical_data(stock_code)
             action = "full sync"
         else:
             # Smart sync - check what data we need
@@ -82,7 +86,7 @@ def _process_single_stock(hist_service: HistoricalDataService, stock_code: str, 
             if not has_data:
                 # No data exists - fetch all historical data
                 logger.info(f"No historical data found for {stock_code}, fetching all data")
-                count = hist_service.fetch_and_store_historical_data(stock_code)
+                data = hist_service.fetch_historical_data(stock_code)
                 action = "initial sync"
             else:
                 # Check if data is fresh, fetch only missing data
@@ -91,18 +95,20 @@ def _process_single_stock(hist_service: HistoricalDataService, stock_code: str, 
 
                 if is_fresh:
                     logger.info(f"Historical data for {stock_code} is already up-to-date")
-                    count = 0
+                    data = None
                     action = "already up-to-date"
                 else:
                     logger.info(f"Fetching missing data for {stock_code} from {missing_start_date}")
-                    count = hist_service.fetch_and_store_historical_data(stock_code, missing_start_date)
+                    data = hist_service.fetch_historical_data(stock_code, missing_start_date)
                     action = "updated"
 
-        return {'stock_code': stock_code, 'count': count, 'action': action, 'success': True}
+        # Return data instead of storing immediately - bulk storage will happen later
+        count = len(data) if data is not None else 0
+        return {'stock_code': stock_code, 'data': data, 'count': count, 'action': action, 'success': True}
 
     except Exception as e:
         logger.error(f"Failed to sync {stock_code}: {e}")
-        return {'stock_code': stock_code, 'count': 0, 'action': 'failed', 'success': False, 'error': str(e)}
+        return {'stock_code': stock_code, 'data': None, 'count': 0, 'action': 'failed', 'success': False, 'error': str(e)}
 
 
 @cli.command()
@@ -148,7 +154,6 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
     logger = get_logger(__name__)
 
     # Initialize services
-    hist_service = HistoricalDataService(db_path)
     db_service = DatabaseService(db_path)
 
     # Ensure database exists
@@ -165,7 +170,9 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
         all_codes = [stock.code for stock in stocks]
 
         # Get codes that already have historical data
-        existing_codes = set(hist_service.get_stocks_with_historical_data())
+        # Create a temporary service to check existing data
+        temp_hist_service = HistoricalDataService(db_path)
+        existing_codes = set(temp_hist_service.get_stocks_with_historical_data())
 
         # Prioritize codes without historical data first
         missing_codes = [code for code in all_codes if code not in existing_codes]
@@ -189,98 +196,58 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
         return 1
 
     # Ensure database is initialized
-    if not _setup_database_and_table(db_path, hist_service):
+    if not _setup_database_and_table(str(db_path)):
         return 1
 
     click.echo(f"Starting smart sync for {len(codes_to_process)} stocks using {max_threads} threads...")
     results = {}
 
-    # Process stocks in parallel with better error handling
+    # Create a main service instance for storing data from worker threads
+    main_hist_service = HistoricalDataService(db_path)
+
+    # Process stocks in parallel
     failed_stocks = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
-            # Submit all tasks
-            future_to_stock = {
-                executor.submit(_process_single_stock, hist_service, stock_code, force_full_sync): stock_code
-                for stock_code in codes_to_process
-            }
+        # Submit all tasks
+        future_to_stock = {
+            executor.submit(_process_single_stock, str(db_path), stock_code, force_full_sync): stock_code
+            for stock_code in codes_to_process
+        }
 
-            # Process results as they complete
-            completed = 0
-            for future in concurrent.futures.as_completed(future_to_stock):
-                stock_code = future_to_stock[future]
-                completed += 1
-                click.echo(f"[{completed}/{len(codes_to_process)}] Completed {stock_code}")
+        # Process results as they complete
+        completed = 0
+        for future in concurrent.futures.as_completed(future_to_stock):
+            stock_code = future_to_stock[future]
+            completed += 1
+            click.echo(f"[{completed}/{len(codes_to_process)}] Completed {stock_code}")
 
-                try:
-                    result = future.result()
-                    results[stock_code] = result
+            try:
+                result = future.result()
+                results[stock_code] = result
 
-                    if result['success']:
-                        if result['count'] > 0:
-                            click.echo(f"  [OK] {result['action']}: {result['count']} records stored")
-                        else:
-                            click.echo(f"  [OK] {result['action']}")
+                if result['success'] and result['data'] is not None:
+                    # For now, store data immediately instead of accumulating for bulk storage
+                    stored_count = main_hist_service.store_historical_data(result['stock_code'], result['data'])
+                    results[result['stock_code']]['count'] = stored_count
+
+                    if stored_count > 0:
+                        click.echo(f"  [OK] {result['action']}: {stored_count} records stored")
                     else:
-                        failed_stocks.append(stock_code)
-                        click.echo(f"  [FAIL] Failed: {result.get('error', 'Unknown error')}")
-
-                except Exception as e:
-                    logger.error(f"Unexpected error processing {stock_code}: {e}")
-                    results[stock_code] = {'count': 0, 'action': 'failed'}
+                        click.echo(f"  [OK] {result['action']}")
+                elif result['success']:
+                    # No data to store (already up-to-date)
+                    click.echo(f"  [OK] {result['action']}")
+                else:
                     failed_stocks.append(stock_code)
-                    click.echo(f"  [ERROR] Unexpected error: {e}")
+                    click.echo(f"  [FAIL] Failed: {result.get('error', 'Unknown error')}")
 
-            # Implement retry logic for failed stocks
-            if failed_stocks and not force_full_sync:
-                click.echo(f"\nRetrying {len(failed_stocks)} failed stocks...")
-                retry_results = {}
+            except Exception as e:
+                logger.error(f"Unexpected error processing {stock_code}: {e}")
+                results[stock_code] = {'count': 0, 'action': 'failed'}
+                failed_stocks.append(stock_code)
+                click.echo(f"  [ERROR] Unexpected error: {e}")
 
-                with concurrent.futures.ThreadPoolExecutor(max_workers=min(max_threads, 3)) as executor:
-                    # Submit retry tasks with lower thread count
-                    future_to_retry_stock = {
-                        executor.submit(_process_single_stock, hist_service, stock_code, force_full_sync): stock_code
-                        for stock_code in failed_stocks
-                    }
-
-                    for future in concurrent.futures.as_completed(future_to_retry_stock):
-                        stock_code = future_to_retry_stock[future]
-                        try:
-                            result = future.result()
-                            retry_results[stock_code] = result
-
-                            if result['success']:
-                                if result['count'] > 0:
-                                    click.echo(f"  [RETRY OK] {result['action']}: {result['count']} records stored")
-                                else:
-                                    click.echo(f"  [RETRY OK] {result['action']}")
-                                # Update original results
-                                results[stock_code] = result
-                            else:
-                                click.echo(f"  [RETRY FAIL] Still failed: {result.get('error', 'Unknown error')}")
-
-                        except Exception as e:
-                            logger.error(f"Retry failed for {stock_code}: {e}")
-                            click.echo(f"  [RETRY ERROR] {e}")
-
-    # Generate summary
-    total_processed = len(results)
-    successful = sum(1 for r in results.values() if r['count'] > 0 or r['action'] == 'already up-to-date')
-    total_records = sum(r['count'] for r in results.values())
-    failed = sum(1 for r in results.values() if r['action'] == 'failed')
-
-    click.echo("\n" + "="*60)
-    click.echo("SYNC SUMMARY")
-    click.echo("="*60)
-    click.echo(f"Total stocks processed: {total_processed}")
-    click.echo(f"Successful: {successful}")
-    click.echo(f"Failed: {failed}")
-    click.echo(f"Total records stored: {total_records}")
-
-    if failed > 0:
-        failed_stocks = [code for code, result in results.items() if result['action'] == 'failed']
-        click.echo(f"Failed stocks: {', '.join(failed_stocks)}")
-
-    return 0 if failed == 0 else 1
+        # All processing is done in the loop above
 
 
 @cli.command()

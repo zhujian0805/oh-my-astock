@@ -1,9 +1,9 @@
 ---
 active: true
-iteration: 1
+iteration: 11
 max_iterations: 0
 completion_promise: null
-started_at: "2026-01-20T13:51:38Z"
+started_at: "2026-01-21T06:57:44Z"
 ---
 
-run stocklib sync-historical --db-path E:\duckdb\stock.duckdb --all-stocks --max-threads 10, if context window exceed limit, just reset and continue the work, make sure all stock has todays history data in db
+run stocklib --debug sync-historical --db-path ./data/stock.duckdb --stock-codes 000508 --max-threads 3, then fix any issues in the output, and then fetch all stocks

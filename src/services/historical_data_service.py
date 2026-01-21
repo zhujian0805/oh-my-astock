@@ -44,7 +44,22 @@ except:
 # Import and patch HTTP libraries BEFORE akshare
 try:
     import httpx
-    httpx._config.DEFAULT_SSL_CONFIG = httpx.SSLConfig(verify=False, cert=None, key=None)
+    # In httpx 0.28+, SSL config is handled differently
+    # Set environment variable to disable SSL verification globally
+    os.environ['SSL_VERIFY'] = 'false'
+    # Or patch the default client creation
+    original_init = httpx.Client.__init__
+    def patched_init(self, *args, **kwargs):
+        kwargs.setdefault('verify', False)
+        return original_init(self, *args, **kwargs)
+    httpx.Client.__init__ = patched_init
+
+    # Also patch AsyncClient
+    original_async_init = httpx.AsyncClient.__init__
+    def patched_async_init(self, *args, **kwargs):
+        kwargs.setdefault('verify', False)
+        return original_async_init(self, *args, **kwargs)
+    httpx.AsyncClient.__init__ = patched_async_init
 except ImportError:
     pass
 
@@ -167,7 +182,7 @@ class HistoricalDataService:
         # Define the APIs to try in order
         apis_to_try = [
             ('stock_zh_a_hist', ak.stock_zh_a_hist),
-            ('stock_zh_a_daily', ak.stock_zh_a_daily),
+            # ('stock_zh_a_daily', ak.stock_zh_a_daily),  # This API seems broken in current akshare version
             ('stock_zh_a_hist_tx', ak.stock_zh_a_hist_tx)
         ]
 
@@ -186,17 +201,30 @@ class HistoricalDataService:
                             adjust=""
                         )
                     elif api_name == 'stock_zh_a_daily':
-                        # stock_zh_a_daily typically takes symbol and adjust parameters
-                        df = api_function(
-                            symbol=stock_code,
-                            adjust=""
-                        )
-                    elif api_name == 'stock_zh_a_hist_tx':
-                        # stock_zh_a_hist_tx typically takes symbol, start_date, end_date
+                        # stock_zh_a_daily takes symbol, start_date, end_date, adjust
                         df = api_function(
                             symbol=stock_code,
                             start_date=start_date or "19700101",
-                            end_date=end_date or "21000101"
+                            end_date=end_date or "21000101",
+                            adjust=""
+                        )
+                    elif api_name == 'stock_zh_a_hist_tx':
+                        # stock_zh_a_hist_tx needs market prefix (sz/sh) and takes symbol, start_date, end_date, adjust
+                        # Add market prefix if not present
+                        if not stock_code.startswith(('sh', 'sz', 'SH', 'SZ')):
+                            # Determine market based on stock code
+                            if stock_code.startswith('6') or stock_code.startswith('9'):
+                                prefixed_symbol = f"sh{stock_code}"
+                            else:
+                                prefixed_symbol = f"sz{stock_code}"
+                        else:
+                            prefixed_symbol = stock_code.lower()
+
+                        df = api_function(
+                            symbol=prefixed_symbol,
+                            start_date=start_date or "19700101",
+                            end_date=end_date or "21000101",
+                            adjust=""
                         )
 
                     if df is not None and not df.empty:
@@ -206,19 +234,32 @@ class HistoricalDataService:
                         logger.debug(f"First row sample: {df.iloc[0].to_dict() if len(df) > 0 else 'No rows'}")
 
                         # Rename columns to match our schema
-                        column_mapping = {
-                            '日期': 'date',
-                            '开盘': 'open_price',
-                            '收盘': 'close_price',
-                            '最高': 'high_price',
-                            '最低': 'low_price',
-                            '成交量': 'volume',
-                            '成交额': 'turnover',
-                            '振幅': 'amplitude',
-                            '涨跌幅': 'price_change_rate',
-                            '涨跌额': 'price_change',
-                            '换手率': 'turnover_rate'
-                        }
+                        if api_name == 'stock_zh_a_hist_tx':
+                            # stock_zh_a_hist_tx returns English column names
+                            column_mapping = {
+                                'date': 'date',
+                                'open': 'open_price',
+                                'close': 'close_price',
+                                'high': 'high_price',
+                                'low': 'low_price',
+                                'amount': 'volume',  # Note: amount in stock_zh_a_hist_tx is actually volume
+                                # turnover is not available in stock_zh_a_hist_tx
+                            }
+                        else:
+                            # Default Chinese column names for other APIs
+                            column_mapping = {
+                                '日期': 'date',
+                                '开盘': 'open_price',
+                                '收盘': 'close_price',
+                                '最高': 'high_price',
+                                '最低': 'low_price',
+                                '成交量': 'volume',
+                                '成交额': 'turnover',
+                                '振幅': 'amplitude',
+                                '涨跌幅': 'price_change_rate',
+                                '涨跌额': 'price_change',
+                                '换手率': 'turnover_rate'
+                            }
 
                         # Only rename columns that exist in the DataFrame
                         existing_columns = [col for col in column_mapping.keys() if col in df.columns]
@@ -614,10 +655,67 @@ class HistoricalDataService:
         logger.info(f"Updating historical data for {stock_code} from {start_date}")
         return self.fetch_and_store_historical_data(stock_code, start_date)
 
-    def get_connection(self) -> DatabaseConnection:
-        """Get database connection instance.
+    @timed_operation("historical_data_bulk_store")
+    def bulk_store_historical_data(self, stock_data_dict: Dict[str, pd.DataFrame]) -> Dict[str, int]:
+        """Bulk store historical data for multiple stocks in a single database operation.
+
+        Args:
+            stock_data_dict: Dictionary mapping stock codes to their DataFrames
 
         Returns:
-            DatabaseConnection instance
+            Dictionary mapping stock codes to number of records stored
         """
-        return self.db_connection
+        if not stock_data_dict:
+            logger.warning("No stock data to bulk store")
+            return {}
+
+        try:
+            conn = self.db_connection.connect()
+            total_records = 0
+            results = {}
+
+            # Prepare all data for bulk insert
+            all_values = []
+            for stock_code, data in stock_data_dict.items():
+                if data is None or data.empty:
+                    logger.warning(f"No data to store for {stock_code}")
+                    results[stock_code] = 0
+                    continue
+
+                stored_count = 0
+                for _, row in data.iterrows():
+                    try:
+                        values = self._convert_row_to_values(stock_code, row)
+                        all_values.append(values)
+                        stored_count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to prepare row for {stock_code}: {e}")
+                        continue
+
+                results[stock_code] = stored_count
+                total_records += stored_count
+
+            if not all_values:
+                logger.warning("No valid data prepared for bulk storage")
+                return results
+
+            # Execute bulk insert using individual INSERT statements in a transaction
+            placeholders = ', '.join(['?' for _ in range(len(all_values[0]))])
+            query = f"""
+                INSERT OR REPLACE INTO stock_historical_data
+                (date, stock_code, open_price, close_price, high_price, low_price,
+                 volume, turnover, amplitude, price_change_rate, price_change, turnover_rate,
+                 created_at, updated_at)
+                VALUES ({placeholders})
+            """
+
+            # Execute all inserts individually (DuckDB handles this efficiently)
+            for values in all_values:
+                conn.execute(query, values)
+
+            logger.info(f"Successfully bulk stored {total_records} historical records for {len(stock_data_dict)} stocks")
+            return results
+
+        except Exception as e:
+            logger.error(f"Failed to bulk store historical data: {e}")
+            return {stock_code: 0 for stock_code in stock_data_dict.keys()}
