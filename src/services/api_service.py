@@ -1,5 +1,9 @@
 """API service for fetching stock data from akshare."""
 
+# Configure HTTP/SSL/tqdm BEFORE importing akshare
+from lib.http_config import configure_all
+configure_all()
+
 import akshare as ak
 import requests
 import time
@@ -20,7 +24,6 @@ class ApiService:
     def __init__(self):
         """Initialize API service."""
         self._validate_dependencies()
-        self._configure_ssl()
 
     def _validate_dependencies(self):
         """Validate that required dependencies are available."""
@@ -28,45 +31,6 @@ class ApiService:
             import akshare
         except ImportError:
             raise ImportError("akshare library is required but not installed")
-
-    def _configure_ssl(self):
-        """Configure SSL settings to handle certificate issues."""
-        # Disable SSL warnings globally
-        import urllib3
-        import warnings
-        import ssl
-        import os
-
-        # Disable SSL warnings
-        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-        warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-
-        # Set environment variables
-        os.environ['REQUESTS_CA_BUNDLE'] = ''
-        os.environ['CURL_CA_BUNDLE'] = ''
-        os.environ['SSL_CERT_FILE'] = ''
-
-        # Try to create unverified context (this might not work for all cases)
-        try:
-            ssl._create_default_https_context = ssl._create_unverified_context
-        except Exception as e:
-            logger.warning(f"Could not set unverified SSL context: {e}")
-
-        # Monkey patch urllib3 to disable SSL verification
-        try:
-            import urllib3
-            original_init = urllib3.PoolManager.__init__
-
-            def patched_init(self, *args, **kwargs):
-                kwargs['cert_reqs'] = 'CERT_NONE'
-                # Remove assert_hostname as it's not supported in newer urllib3 versions
-                kwargs.pop('assert_hostname', None)
-                return original_init(self, *args, **kwargs)
-
-            urllib3.PoolManager.__init__ = patched_init
-            logger.info("Successfully patched urllib3 PoolManager to disable SSL verification")
-        except Exception as e:
-            logger.warning(f"Could not patch urllib3: {e}")
 
     @timed_operation("api_fetch_code_name_stocks")
     def _fetch_stocks_with_code_name_pagination(self) -> List[Stock]:

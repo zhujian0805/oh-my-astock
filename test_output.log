@@ -1,0 +1,5 @@
+/home/jzhu/venv314/lib/python3.14/site-packages/py_mini_racer/py_mini_racer.py:15: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+Processing 1 specified stocks: 000508
+2026-01-21 09:26:40,901 - services.historical_data_service - ERROR - Failed to create historical data table: IO Error: Could not set lock on file "/home/jzhu/oh-my-astock/data/stock.duckdb": Conflicting lock is held in /usr/bin/python3.14 (PID 46470) by user jzhu. See also https://duckdb.org/docs/stable/connect/concurrency
+Failed to create historical data table

@@ -1,143 +1,10 @@
 """Historical data service for fetching and managing stock historical data."""
 
-# Configure SSL BEFORE importing akshare
-import os
-import ssl
-import urllib3
-import warnings
+# Configure HTTP/SSL/tqdm BEFORE importing akshare
+from lib.http_config import configure_all
+configure_all()
 
-# Disable tqdm progress bars BEFORE any other imports
-os.environ['TQDM_DISABLE'] = '1'
-
-# Set environment variables BEFORE importing any HTTP libraries
-ssl_env_vars = [
-    ('REQUESTS_CA_BUNDLE', ''),
-    ('CURL_CA_BUNDLE', ''),
-    ('SSL_CERT_FILE', ''),
-    ('SSL_CERT_DIR', ''),
-    ('PYTHONHTTPSVERIFY', '0'),
-    ('REQUESTS_INSECURE_SSL', '1')
-]
-
-for var, value in ssl_env_vars:
-    os.environ[var] = value
-
-# Disable SSL warnings
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-warnings.filterwarnings('ignore', message='Unverified HTTPS request')
-
-# Monkey-patch tqdm to disable progress bars BEFORE importing akshare
-try:
-    import sys
-    from unittest.mock import MagicMock
-
-    # Create a dummy tqdm class that doesn't display anything
-    class NoOpTqdm:
-        def __init__(self, *args, **kwargs):
-            self.iterable = args[0] if args else []
-            self.n = 0
-            self.total = kwargs.get('total', len(self.iterable) if hasattr(self.iterable, '__len__') else None)
-
-        def __iter__(self):
-            return iter(self.iterable)
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            pass
-
-        def update(self, n=1):
-            self.n += n
-
-        def close(self):
-            pass
-
-        def set_description(self, desc):
-            pass
-
-        @staticmethod
-        def disable(flag):
-            pass
-
-    # Inject into sys.modules before akshare imports it
-    sys.modules['tqdm.std'] = MagicMock()
-    sys.modules['tqdm.std'].tqdm = NoOpTqdm
-    sys.modules['tqdm.auto'] = MagicMock()
-    sys.modules['tqdm.auto'].tqdm = NoOpTqdm
-except Exception:
-    pass
-
-# Configure SSL context globally
-ssl_context = ssl.create_default_context()
-ssl_context.check_hostname = False
-ssl_context.verify_mode = ssl.CERT_NONE
-
-# Monkey patch SSL contexts
-ssl._create_default_https_context = lambda: ssl_context
-ssl._create_unverified_context = lambda: ssl_context
-
-# Also try to patch the stdlib SSL module
-try:
-    import _ssl
-    if hasattr(_ssl, 'SSLContext'):
-        _ssl.SSLContext.check_hostname = False
-        _ssl.SSLContext.verify_mode = ssl.CERT_NONE
-except:
-    pass
-
-# Import and patch HTTP libraries BEFORE akshare
-try:
-    import httpx
-    # In httpx 0.28+, SSL config is handled differently
-    # Set environment variable to disable SSL verification globally
-    os.environ['SSL_VERIFY'] = 'false'
-    # Or patch the default client creation
-    original_init = httpx.Client.__init__
-    def patched_init(self, *args, **kwargs):
-        kwargs.setdefault('verify', False)
-        return original_init(self, *args, **kwargs)
-    httpx.Client.__init__ = patched_init
-
-    # Also patch AsyncClient
-    original_async_init = httpx.AsyncClient.__init__
-    def patched_async_init(self, *args, **kwargs):
-        kwargs.setdefault('verify', False)
-        return original_async_init(self, *args, **kwargs)
-    httpx.AsyncClient.__init__ = patched_async_init
-except ImportError:
-    pass
-
-# Patch urllib3
-try:
-    import urllib3
-    original_init = urllib3.PoolManager.__init__
-
-    def patched_init(self, *args, **kwargs):
-        # Force disable SSL verification
-        kwargs['cert_reqs'] = 'CERT_NONE'
-        kwargs['assert_hostname'] = False
-        return original_init(self, *args, **kwargs)
-
-    urllib3.PoolManager.__init__ = patched_init
-except Exception:
-    pass
-
-# Patch requests
-try:
-    import requests
-    original_request = requests.Session.request
-
-    def patched_request(self, method, url, **kwargs):
-        # Force disable SSL verification for all requests
-        kwargs['verify'] = False
-        return original_request(self, method, url, **kwargs)
-
-    requests.Session.request = patched_request
-except Exception:
-    pass
-
-# NOW import akshare after SSL is configured
+# NOW import akshare after configuration
 import akshare as ak
 import pandas as pd
 from typing import Optional, List, Dict, Tuple
@@ -341,22 +208,8 @@ class HistoricalDataService:
                         requests.exceptions.Timeout, requests.exceptions.RequestException,
                         HTTPError, ConnectionError, TimeoutError, OSError) as e:
                     if attempt < max_retries:
-                        # Fixed 30-second delay between retries
-                        wait_time = 30.0
-
-                        logger.warning(f"Network/API error for {stock_code} using {api_name} (attempt {attempt + 1}): {e}. Retrying in {wait_time:.1f}s...")
-                        time.sleep(wait_time)
-                        continue
-                    else:
-                        logger.error(f"Network/API error for {stock_code} using {api_name} after {max_retries + 1} attempts: {e}")
-                        return None
-
-                except (ssl.SSLError, requests.exceptions.SSLError, requests.exceptions.ConnectionError,
-                        requests.exceptions.Timeout, requests.exceptions.RequestException,
-                        HTTPError, ConnectionError, TimeoutError, OSError) as e:
-                    if attempt < max_retries:
                         # Exponential backoff with jitter to avoid overwhelming the API
-                        base_wait = 10.0
+                        base_wait = 2.0
                         wait_time = base_wait * (2 ** attempt) + (time.time() % 5)  # Add jitter
 
                         logger.warning(f"Network/API error for {stock_code} using {api_name} (attempt {attempt + 1}): {e}. Retrying in {wait_time:.1f}s...")
@@ -364,7 +217,7 @@ class HistoricalDataService:
                         continue
                     else:
                         logger.error(f"Network/API error for {stock_code} using {api_name} after {max_retries + 1} attempts: {e}")
-                        return None
+                        break  # Break to try next API
 
                 except Exception as e:
                     # Add rate limiting detection
@@ -384,14 +237,10 @@ class HistoricalDataService:
                     # Continue to next API instead of failing completely
                     continue
 
-            # If all APIs failed for this attempt, and we have retries left, wait and try again
-            if attempt < max_retries:
-                wait_time = 30.0
-                logger.warning(f"All APIs failed for {stock_code} (attempt {attempt + 1}). Retrying all APIs in {wait_time:.1f}s...")
-                time.sleep(wait_time)
-            else:
-                logger.error(f"All APIs failed for {stock_code} after {max_retries + 1} attempts")
-                return None
+            # If all APIs failed for this attempt, don't retry - just return None
+            # No point retrying if the stock has no data available
+            logger.warning(f"All APIs returned no data for {stock_code}")
+            return None
 
         return None
 

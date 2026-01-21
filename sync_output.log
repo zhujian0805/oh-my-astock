@@ -1,0 +1,451 @@
+/home/jzhu/venv314/lib/python3.14/site-packages/py_mini_racer/py_mini_racer.py:15: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  import pkg_resources
+2026-01-21 09:45:43,039 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:45:43,048 - services.database_service - INFO - Retrieved 5797 stocks from database
+2026-01-21 09:45:43,050 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:45:43,053 - services.historical_data_service - INFO - Found 13 stocks with historical data
+Processing all 5797 stocks from database
+  - 5784 stocks without historical data (prioritized first)
+  - 13 stocks with existing historical data
+2026-01-21 09:45:43,055 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:45:43,056 - services.historical_data_service - INFO - Successfully created stock_historical_data table and indexes
+Starting smart sync for 5797 stocks using 3 threads...
+2026-01-21 09:45:43,103 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:45:43,104 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:45:43,104 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:45:43,105 - cli.commands - INFO - No historical data found for 000011, fetching all data
+2026-01-21 09:45:43,105 - services.historical_data_service - INFO - Fetching historical data for 000011 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:45:43,106 - cli.commands - INFO - No historical data found for 000014, fetching all data
+2026-01-21 09:45:43,106 - services.historical_data_service - INFO - Fetching historical data for 000014 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:45:43,107 - cli.commands - INFO - No historical data found for 000010, fetching all data
+2026-01-21 09:45:43,107 - services.historical_data_service - INFO - Fetching historical data for 000010 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:45:43,676 - services.historical_data_service - WARNING - Network/API error for 000011 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.7s...
+2026-01-21 09:45:43,760 - services.historical_data_service - WARNING - Network/API error for 000014 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.8s...
+2026-01-21 09:45:44,606 - services.historical_data_service - WARNING - Network/API error for 000010 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.6s...
+2026-01-21 09:45:49,353 - services.historical_data_service - INFO - Fetching historical data for 000011 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:45:49,521 - services.historical_data_service - INFO - Fetching historical data for 000014 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:45:51,218 - services.historical_data_service - INFO - Fetching historical data for 000010 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:46:20,686 - services.historical_data_service - INFO - Successfully fetched 6331 records for 000010 using stock_zh_a_hist_tx
+[1/5797] Completed 000010
+2026-01-21 09:46:20,688 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:46:20,688 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:46:20,693 - cli.commands - INFO - No historical data found for 000016, fetching all data
+2026-01-21 09:46:20,693 - services.historical_data_service - INFO - Fetching historical data for 000016 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:46:21,377 - services.historical_data_service - WARNING - Network/API error for 000016 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.4s...
+2026-01-21 09:46:22,157 - services.historical_data_service - INFO - Successfully fetched 8023 records for 000011 using stock_zh_a_hist_tx
+2026-01-21 09:46:22,163 - services.historical_data_service - INFO - Successfully fetched 8036 records for 000014 using stock_zh_a_hist_tx
+2026-01-21 09:46:22,165 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:46:22,165 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:46:22,168 - cli.commands - INFO - No historical data found for 000017, fetching all data
+2026-01-21 09:46:22,168 - services.historical_data_service - INFO - Fetching historical data for 000017 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:46:22,168 - cli.commands - INFO - No historical data found for 000018, fetching all data
+2026-01-21 09:46:22,168 - services.historical_data_service - INFO - Fetching historical data for 000018 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:46:22,771 - services.historical_data_service - WARNING - Network/API error for 000018 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.8s...
+2026-01-21 09:46:24,725 - services.historical_data_service - WARNING - Network/API error for 000017 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.7s...
+2026-01-21 09:46:24,755 - services.historical_data_service - INFO - Fetching historical data for 000016 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:46:27,543 - services.historical_data_service - INFO - Fetching historical data for 000018 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:46:31,455 - services.historical_data_service - INFO - Fetching historical data for 000017 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:46:57,230 - services.historical_data_service - INFO - Successfully fetched 8061 records for 000016 using stock_zh_a_hist_tx
+2026-01-21 09:46:57,236 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:46:57,236 - cli.commands - INFO - No historical data found for 000019, fetching all data
+2026-01-21 09:46:57,237 - services.historical_data_service - INFO - Fetching historical data for 000019 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:46:58,344 - services.historical_data_service - WARNING - Network/API error for 000019 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.3s...
+2026-01-21 09:47:00,543 - services.historical_data_service - INFO - Successfully fetched 6487 records for 000018 using stock_zh_a_hist_tx
+2026-01-21 09:47:00,546 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:47:00,553 - cli.commands - INFO - No historical data found for 000020, fetching all data
+2026-01-21 09:47:00,553 - services.historical_data_service - INFO - Fetching historical data for 000020 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:47:01,212 - services.historical_data_service - WARNING - Network/API error for 000020 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.2s...
+2026-01-21 09:47:03,689 - services.historical_data_service - INFO - Fetching historical data for 000019 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:47:03,998 - services.historical_data_service - INFO - Successfully fetched 7113 records for 000017 using stock_zh_a_hist_tx
+2026-01-21 09:47:04,002 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:47:04,008 - cli.commands - INFO - No historical data found for 000021, fetching all data
+2026-01-21 09:47:04,008 - services.historical_data_service - INFO - Fetching historical data for 000021 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:47:04,425 - services.historical_data_service - INFO - Fetching historical data for 000020 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:47:04,643 - services.historical_data_service - WARNING - Network/API error for 000021 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.6s...
+2026-01-21 09:47:11,291 - services.historical_data_service - INFO - Fetching historical data for 000021 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:47:23,352 - services.historical_data_service - INFO - Successfully stored 6331 historical records for 000010
+  [OK] initial sync: 6331 records stored
+[2/5797] Completed 000011
+2026-01-21 09:47:35,444 - services.historical_data_service - INFO - Successfully fetched 7721 records for 000019 using stock_zh_a_hist_tx
+2026-01-21 09:47:35,448 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:47:35,449 - cli.commands - INFO - No historical data found for 000023, fetching all data
+2026-01-21 09:47:35,449 - services.historical_data_service - INFO - Fetching historical data for 000023 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:47:35,941 - services.historical_data_service - INFO - Successfully fetched 7695 records for 000020 using stock_zh_a_hist_tx
+2026-01-21 09:47:35,945 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:47:35,947 - cli.commands - INFO - No historical data found for 000024, fetching all data
+2026-01-21 09:47:35,947 - services.historical_data_service - INFO - Fetching historical data for 000024 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:47:36,104 - services.historical_data_service - WARNING - Network/API error for 000023 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.1s...
+2026-01-21 09:47:36,550 - services.historical_data_service - WARNING - Network/API error for 000024 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.6s...
+2026-01-21 09:47:39,209 - services.historical_data_service - INFO - Fetching historical data for 000023 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:47:40,101 - services.historical_data_service - INFO - Fetching historical data for 000024 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:47:40,667 - services.historical_data_service - INFO - Successfully fetched 7658 records for 000021 using stock_zh_a_hist_tx
+2026-01-21 09:47:40,671 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:47:40,672 - cli.commands - INFO - No historical data found for 000025, fetching all data
+2026-01-21 09:47:40,672 - services.historical_data_service - INFO - Fetching historical data for 000025 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:47:41,279 - services.historical_data_service - WARNING - Network/API error for 000025 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.3s...
+2026-01-21 09:47:44,559 - services.historical_data_service - INFO - Fetching historical data for 000025 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:48:09,819 - services.historical_data_service - INFO - Successfully fetched 7222 records for 000023 using stock_zh_a_hist_tx
+2026-01-21 09:48:09,872 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:48:09,908 - cli.commands - INFO - No historical data found for 000026, fetching all data
+2026-01-21 09:48:09,913 - services.historical_data_service - INFO - Fetching historical data for 000026 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:48:11,039 - services.historical_data_service - WARNING - Network/API error for 000026 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.0s...
+2026-01-21 09:48:11,909 - services.historical_data_service - INFO - Successfully fetched 5220 records for 000024 using stock_zh_a_hist_tx
+2026-01-21 09:48:11,913 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:48:11,918 - cli.commands - INFO - No historical data found for 000027, fetching all data
+2026-01-21 09:48:11,918 - services.historical_data_service - INFO - Fetching historical data for 000027 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:48:12,893 - services.historical_data_service - WARNING - Network/API error for 000027 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.9s...
+2026-01-21 09:48:14,078 - services.historical_data_service - INFO - Fetching historical data for 000026 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:48:15,287 - services.historical_data_service - INFO - Successfully fetched 7792 records for 000025 using stock_zh_a_hist_tx
+2026-01-21 09:48:15,291 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:48:15,292 - cli.commands - INFO - No historical data found for 000028, fetching all data
+2026-01-21 09:48:15,292 - services.historical_data_service - INFO - Fetching historical data for 000028 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:48:16,286 - services.historical_data_service - WARNING - Network/API error for 000028 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.3s...
+2026-01-21 09:48:17,786 - services.historical_data_service - INFO - Fetching historical data for 000027 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:48:19,577 - services.historical_data_service - INFO - Fetching historical data for 000028 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:48:44,502 - services.historical_data_service - INFO - Successfully fetched 7834 records for 000026 using stock_zh_a_hist_tx
+2026-01-21 09:48:44,506 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:48:44,507 - cli.commands - INFO - No historical data found for 000029, fetching all data
+2026-01-21 09:48:44,507 - services.historical_data_service - INFO - Fetching historical data for 000029 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:48:45,471 - services.historical_data_service - WARNING - Network/API error for 000029 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 2.5s...
+2026-01-21 09:48:47,338 - services.historical_data_service - INFO - Successfully stored 8023 historical records for 000011
+  [OK] initial sync: 8023 records stored
+[3/5797] Completed 000014
+2026-01-21 09:48:47,943 - services.historical_data_service - INFO - Fetching historical data for 000029 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:48:48,832 - services.historical_data_service - INFO - Successfully fetched 7733 records for 000027 using stock_zh_a_hist_tx
+2026-01-21 09:48:48,836 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:48:48,837 - cli.commands - INFO - No historical data found for 000030, fetching all data
+2026-01-21 09:48:48,837 - services.historical_data_service - INFO - Fetching historical data for 000030 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:48:49,769 - services.historical_data_service - WARNING - Network/API error for 000030 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.8s...
+2026-01-21 09:48:50,489 - services.historical_data_service - INFO - Successfully fetched 7702 records for 000028 using stock_zh_a_hist_tx
+2026-01-21 09:48:50,493 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:48:50,493 - cli.commands - INFO - No historical data found for 000031, fetching all data
+2026-01-21 09:48:50,493 - services.historical_data_service - INFO - Fetching historical data for 000031 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:48:51,393 - services.historical_data_service - WARNING - Network/API error for 000031 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.4s...
+2026-01-21 09:48:54,786 - services.historical_data_service - INFO - Fetching historical data for 000031 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:48:56,539 - services.historical_data_service - INFO - Fetching historical data for 000030 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:49:19,945 - services.historical_data_service - INFO - Successfully fetched 6785 records for 000029 using stock_zh_a_hist_tx
+2026-01-21 09:49:19,950 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:49:19,950 - cli.commands - INFO - No historical data found for 000032, fetching all data
+2026-01-21 09:49:19,950 - services.historical_data_service - INFO - Fetching historical data for 000032 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:49:21,689 - services.historical_data_service - WARNING - Network/API error for 000032 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.7s...
+2026-01-21 09:49:25,384 - services.historical_data_service - INFO - Fetching historical data for 000032 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:49:26,610 - services.historical_data_service - INFO - Successfully fetched 7549 records for 000031 using stock_zh_a_hist_tx
+2026-01-21 09:49:26,614 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:49:26,614 - cli.commands - INFO - No historical data found for 000033, fetching all data
+2026-01-21 09:49:26,614 - services.historical_data_service - INFO - Fetching historical data for 000033 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:49:27,307 - services.historical_data_service - WARNING - Network/API error for 000033 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.3s...
+2026-01-21 09:49:28,164 - services.historical_data_service - INFO - Successfully fetched 7000 records for 000030 using stock_zh_a_hist_tx
+2026-01-21 09:49:28,167 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:49:28,169 - cli.commands - INFO - No historical data found for 000034, fetching all data
+2026-01-21 09:49:28,169 - services.historical_data_service - INFO - Fetching historical data for 000034 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:49:28,856 - services.historical_data_service - WARNING - Network/API error for 000034 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.9s...
+2026-01-21 09:49:31,615 - services.historical_data_service - INFO - Fetching historical data for 000033 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:49:34,713 - services.historical_data_service - INFO - Fetching historical data for 000034 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:49:56,384 - services.historical_data_service - INFO - Successfully fetched 7504 records for 000032 using stock_zh_a_hist_tx
+2026-01-21 09:49:56,389 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:49:56,389 - cli.commands - INFO - No historical data found for 000035, fetching all data
+2026-01-21 09:49:56,389 - services.historical_data_service - INFO - Fetching historical data for 000035 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:49:57,922 - services.historical_data_service - WARNING - Network/API error for 000035 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.9s...
+2026-01-21 09:50:01,520 - services.historical_data_service - INFO - Successfully fetched 4923 records for 000033 using stock_zh_a_hist_tx
+2026-01-21 09:50:01,524 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:50:01,525 - cli.commands - INFO - No historical data found for 000036, fetching all data
+2026-01-21 09:50:01,525 - services.historical_data_service - INFO - Fetching historical data for 000036 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:50:02,170 - services.historical_data_service - WARNING - Network/API error for 000036 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.2s...
+2026-01-21 09:50:02,845 - services.historical_data_service - INFO - Fetching historical data for 000035 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:50:04,819 - services.historical_data_service - INFO - Successfully fetched 6943 records for 000034 using stock_zh_a_hist_tx
+2026-01-21 09:50:04,824 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:50:04,825 - cli.commands - INFO - No historical data found for 000037, fetching all data
+2026-01-21 09:50:04,825 - services.historical_data_service - INFO - Fetching historical data for 000037 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:50:06,340 - services.historical_data_service - INFO - Fetching historical data for 000036 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:50:06,372 - services.historical_data_service - WARNING - Network/API error for 000037 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.4s...
+2026-01-21 09:50:08,427 - services.historical_data_service - INFO - Successfully stored 8036 historical records for 000014
+  [OK] initial sync: 8036 records stored
+[4/5797] Completed 000016
+2026-01-21 09:50:09,819 - services.historical_data_service - INFO - Fetching historical data for 000037 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:50:35,162 - services.historical_data_service - INFO - Successfully fetched 6599 records for 000035 using stock_zh_a_hist_tx
+2026-01-21 09:50:35,168 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:50:35,169 - cli.commands - INFO - No historical data found for 000038, fetching all data
+2026-01-21 09:50:35,169 - services.historical_data_service - INFO - Fetching historical data for 000038 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:50:35,846 - services.historical_data_service - WARNING - Network/API error for 000038 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 2.8s...
+2026-01-21 09:50:38,696 - services.historical_data_service - INFO - Fetching historical data for 000038 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:50:39,016 - services.historical_data_service - INFO - Successfully fetched 7452 records for 000036 using stock_zh_a_hist_tx
+2026-01-21 09:50:39,020 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:50:39,021 - cli.commands - INFO - No historical data found for 000039, fetching all data
+2026-01-21 09:50:39,021 - services.historical_data_service - INFO - Fetching historical data for 000039 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:50:39,462 - services.historical_data_service - WARNING - Network/API error for 000039 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.5s...
+2026-01-21 09:50:42,453 - services.historical_data_service - INFO - Successfully fetched 7280 records for 000037 using stock_zh_a_hist_tx
+2026-01-21 09:50:42,458 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:50:42,459 - cli.commands - INFO - No historical data found for 000040, fetching all data
+2026-01-21 09:50:42,459 - services.historical_data_service - INFO - Fetching historical data for 000040 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:50:42,900 - services.historical_data_service - WARNING - Network/API error for 000040 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.9s...
+2026-01-21 09:50:45,925 - services.historical_data_service - INFO - Fetching historical data for 000039 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:50:47,801 - services.historical_data_service - INFO - Fetching historical data for 000040 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:51:08,635 - services.historical_data_service - INFO - Successfully fetched 5081 records for 000038 using stock_zh_a_hist_tx
+2026-01-21 09:51:08,639 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:51:08,641 - cli.commands - INFO - No historical data found for 000042, fetching all data
+2026-01-21 09:51:08,641 - services.historical_data_service - INFO - Fetching historical data for 000042 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:51:09,126 - services.historical_data_service - WARNING - Network/API error for 000042 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.1s...
+2026-01-21 09:51:15,258 - services.historical_data_service - INFO - Fetching historical data for 000042 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:51:16,705 - services.historical_data_service - INFO - Successfully fetched 7607 records for 000039 using stock_zh_a_hist_tx
+2026-01-21 09:51:16,708 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:51:16,711 - cli.commands - INFO - No historical data found for 000045, fetching all data
+2026-01-21 09:51:16,711 - services.historical_data_service - INFO - Fetching historical data for 000045 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:51:17,184 - services.historical_data_service - WARNING - Network/API error for 000045 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.2s...
+2026-01-21 09:51:18,415 - services.historical_data_service - INFO - Successfully fetched 7112 records for 000040 using stock_zh_a_hist_tx
+2026-01-21 09:51:18,419 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:51:18,420 - cli.commands - INFO - No historical data found for 000046, fetching all data
+2026-01-21 09:51:18,420 - services.historical_data_service - INFO - Fetching historical data for 000046 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:51:18,866 - services.historical_data_service - WARNING - Network/API error for 000046 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.9s...
+2026-01-21 09:51:21,369 - services.historical_data_service - INFO - Fetching historical data for 000045 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:51:24,737 - services.historical_data_service - INFO - Fetching historical data for 000046 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:51:36,754 - services.historical_data_service - INFO - Successfully stored 8061 historical records for 000016
+  [OK] initial sync: 8061 records stored
+[5/5797] Completed 000018
+2026-01-21 09:51:46,787 - services.historical_data_service - INFO - Successfully fetched 7312 records for 000042 using stock_zh_a_hist_tx
+2026-01-21 09:51:46,791 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:51:46,792 - cli.commands - INFO - No historical data found for 000047, fetching all data
+2026-01-21 09:51:46,792 - services.historical_data_service - INFO - Fetching historical data for 000047 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:51:49,184 - services.historical_data_service - WARNING - Network/API error for 000047 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.2s...
+2026-01-21 09:51:51,871 - services.historical_data_service - INFO - Successfully fetched 7370 records for 000045 using stock_zh_a_hist_tx
+2026-01-21 09:51:51,874 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:51:51,883 - cli.commands - INFO - No historical data found for 000048, fetching all data
+2026-01-21 09:51:51,883 - services.historical_data_service - INFO - Fetching historical data for 000048 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:51:52,556 - services.historical_data_service - WARNING - Network/API error for 000048 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.6s...
+2026-01-21 09:51:55,000 - services.historical_data_service - INFO - Successfully fetched 6943 records for 000046 using stock_zh_a_hist_tx
+2026-01-21 09:51:55,004 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:51:55,008 - cli.commands - INFO - No historical data found for 000049, fetching all data
+2026-01-21 09:51:55,008 - services.historical_data_service - INFO - Fetching historical data for 000049 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:51:55,368 - services.historical_data_service - INFO - Fetching historical data for 000047 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:51:55,622 - services.historical_data_service - WARNING - Network/API error for 000049 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 2.6s...
+2026-01-21 09:51:57,113 - services.historical_data_service - INFO - Fetching historical data for 000048 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:51:58,246 - services.historical_data_service - INFO - Fetching historical data for 000049 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:52:25,485 - services.historical_data_service - INFO - Successfully fetched 1811 records for 000047 using stock_zh_a_hist_tx
+2026-01-21 09:52:25,490 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:52:25,492 - cli.commands - INFO - No historical data found for 000050, fetching all data
+2026-01-21 09:52:25,492 - services.historical_data_service - INFO - Fetching historical data for 000050 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:52:27,779 - services.historical_data_service - INFO - Successfully fetched 7326 records for 000048 using stock_zh_a_hist_tx
+2026-01-21 09:52:27,785 - services.historical_data_service - INFO - Successfully fetched 7320 records for 000049 using stock_zh_a_hist_tx
+2026-01-21 09:52:27,787 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:52:27,787 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:52:27,789 - cli.commands - INFO - No historical data found for 000055, fetching all data
+2026-01-21 09:52:27,789 - services.historical_data_service - INFO - Fetching historical data for 000055 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:52:27,790 - cli.commands - INFO - No historical data found for 000056, fetching all data
+2026-01-21 09:52:27,790 - services.historical_data_service - INFO - Fetching historical data for 000056 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:52:29,143 - services.historical_data_service - WARNING - Network/API error for 000050 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.1s...
+2026-01-21 09:52:29,200 - services.historical_data_service - WARNING - Network/API error for 000056 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.2s...
+2026-01-21 09:52:29,446 - services.historical_data_service - WARNING - Network/API error for 000055 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.4s...
+2026-01-21 09:52:35,286 - services.historical_data_service - INFO - Fetching historical data for 000050 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:52:35,400 - services.historical_data_service - INFO - Fetching historical data for 000056 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:52:35,894 - services.historical_data_service - INFO - Fetching historical data for 000055 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:52:43,475 - services.historical_data_service - INFO - Successfully stored 6487 historical records for 000018
+  [OK] initial sync: 6487 records stored
+[6/5797] Completed 000017
+2026-01-21 09:53:05,579 - services.historical_data_service - INFO - Successfully fetched 6864 records for 000056 using stock_zh_a_hist_tx
+2026-01-21 09:53:05,585 - services.historical_data_service - INFO - Successfully fetched 7141 records for 000055 using stock_zh_a_hist_tx
+2026-01-21 09:53:05,588 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:53:05,589 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:53:05,591 - cli.commands - INFO - No historical data found for 000059, fetching all data
+2026-01-21 09:53:05,591 - services.historical_data_service - INFO - Fetching historical data for 000059 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:53:05,591 - cli.commands - INFO - No historical data found for 000058, fetching all data
+2026-01-21 09:53:05,592 - services.historical_data_service - INFO - Fetching historical data for 000058 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:53:06,248 - services.historical_data_service - WARNING - Network/API error for 000059 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.2s...
+2026-01-21 09:53:06,248 - services.historical_data_service - WARNING - Network/API error for 000058 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.2s...
+2026-01-21 09:53:06,258 - services.historical_data_service - INFO - Successfully fetched 7201 records for 000050 using stock_zh_a_hist_tx
+2026-01-21 09:53:06,263 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:53:06,264 - cli.commands - INFO - No historical data found for 000060, fetching all data
+2026-01-21 09:53:06,264 - services.historical_data_service - INFO - Fetching historical data for 000060 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:53:06,708 - services.historical_data_service - WARNING - Network/API error for 000060 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.7s...
+2026-01-21 09:53:09,497 - services.historical_data_service - INFO - Fetching historical data for 000059 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:53:09,498 - services.historical_data_service - INFO - Fetching historical data for 000058 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:53:10,438 - services.historical_data_service - INFO - Fetching historical data for 000060 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:53:37,108 - services.historical_data_service - INFO - Successfully fetched 6840 records for 000059 using stock_zh_a_hist_tx
+2026-01-21 09:53:37,113 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:53:37,115 - cli.commands - INFO - No historical data found for 000061, fetching all data
+2026-01-21 09:53:37,115 - services.historical_data_service - INFO - Fetching historical data for 000061 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:53:37,656 - services.historical_data_service - WARNING - Network/API error for 000061 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.7s...
+2026-01-21 09:53:37,906 - services.historical_data_service - INFO - Successfully fetched 6520 records for 000058 using stock_zh_a_hist_tx
+2026-01-21 09:53:37,912 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:53:37,913 - cli.commands - INFO - No historical data found for 000062, fetching all data
+2026-01-21 09:53:37,913 - services.historical_data_service - INFO - Fetching historical data for 000062 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:53:38,357 - services.historical_data_service - WARNING - Network/API error for 000062 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.4s...
+2026-01-21 09:53:38,718 - services.historical_data_service - INFO - Successfully fetched 6937 records for 000060 using stock_zh_a_hist_tx
+2026-01-21 09:53:38,721 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:53:38,723 - cli.commands - INFO - No historical data found for 000063, fetching all data
+2026-01-21 09:53:38,724 - services.historical_data_service - INFO - Fetching historical data for 000063 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:53:39,169 - services.historical_data_service - WARNING - Network/API error for 000063 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.2s...
+2026-01-21 09:53:42,312 - services.historical_data_service - INFO - Fetching historical data for 000061 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:53:43,714 - services.historical_data_service - INFO - Fetching historical data for 000062 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:53:45,340 - services.historical_data_service - INFO - Fetching historical data for 000063 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:53:58,258 - services.historical_data_service - INFO - Successfully stored 7113 historical records for 000017
+  [OK] initial sync: 7113 records stored
+[7/5797] Completed 000019
+2026-01-21 09:54:09,458 - services.historical_data_service - INFO - Successfully fetched 6748 records for 000061 using stock_zh_a_hist_tx
+2026-01-21 09:54:09,465 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:54:09,465 - cli.commands - INFO - No historical data found for 000065, fetching all data
+2026-01-21 09:54:09,465 - services.historical_data_service - INFO - Fetching historical data for 000065 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:54:10,415 - services.historical_data_service - WARNING - Network/API error for 000065 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 2.4s...
+2026-01-21 09:54:11,058 - services.historical_data_service - INFO - Successfully fetched 6843 records for 000062 using stock_zh_a_hist_tx
+2026-01-21 09:54:11,063 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:54:11,063 - cli.commands - INFO - No historical data found for 000066, fetching all data
+2026-01-21 09:54:11,064 - services.historical_data_service - INFO - Fetching historical data for 000066 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:54:11,764 - services.historical_data_service - WARNING - Network/API error for 000066 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.8s...
+2026-01-21 09:54:12,556 - services.historical_data_service - INFO - Successfully fetched 6675 records for 000063 using stock_zh_a_hist_tx
+2026-01-21 09:54:12,560 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:54:12,561 - cli.commands - INFO - No historical data found for 000068, fetching all data
+2026-01-21 09:54:12,561 - services.historical_data_service - INFO - Fetching historical data for 000068 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:54:12,831 - services.historical_data_service - INFO - Fetching historical data for 000065 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:54:13,321 - services.historical_data_service - WARNING - Network/API error for 000068 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.3s...
+2026-01-21 09:54:15,528 - services.historical_data_service - INFO - Fetching historical data for 000066 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:54:18,648 - services.historical_data_service - INFO - Fetching historical data for 000068 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:54:40,614 - services.historical_data_service - INFO - Successfully fetched 6489 records for 000065 using stock_zh_a_hist_tx
+2026-01-21 09:54:40,620 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:54:40,621 - cli.commands - INFO - No historical data found for 000069, fetching all data
+2026-01-21 09:54:40,621 - services.historical_data_service - INFO - Fetching historical data for 000069 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:54:41,590 - services.historical_data_service - WARNING - Network/API error for 000069 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.6s...
+2026-01-21 09:54:43,838 - services.historical_data_service - INFO - Successfully fetched 6614 records for 000066 using stock_zh_a_hist_tx
+2026-01-21 09:54:43,842 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:54:43,843 - cli.commands - INFO - No historical data found for 000070, fetching all data
+2026-01-21 09:54:43,843 - services.historical_data_service - INFO - Fetching historical data for 000070 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:54:44,545 - services.historical_data_service - WARNING - Network/API error for 000070 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.5s...
+2026-01-21 09:54:45,180 - services.historical_data_service - INFO - Fetching historical data for 000069 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:54:47,082 - services.historical_data_service - INFO - Successfully fetched 6311 records for 000068 using stock_zh_a_hist_tx
+2026-01-21 09:54:47,087 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:54:47,087 - cli.commands - INFO - No historical data found for 000078, fetching all data
+2026-01-21 09:54:47,087 - services.historical_data_service - INFO - Fetching historical data for 000078 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:54:47,838 - services.historical_data_service - WARNING - Network/API error for 000078 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.8s...
+2026-01-21 09:54:51,091 - services.historical_data_service - INFO - Fetching historical data for 000070 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:54:52,676 - services.historical_data_service - INFO - Fetching historical data for 000078 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:55:13,615 - services.historical_data_service - INFO - Successfully fetched 6735 records for 000069 using stock_zh_a_hist_tx
+2026-01-21 09:55:13,620 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:55:13,621 - cli.commands - INFO - No historical data found for 000088, fetching all data
+2026-01-21 09:55:13,621 - services.historical_data_service - INFO - Fetching historical data for 000088 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:55:14,284 - services.historical_data_service - WARNING - Network/API error for 000088 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.3s...
+2026-01-21 09:55:17,405 - services.historical_data_service - INFO - Successfully fetched 5978 records for 000070 using stock_zh_a_hist_tx
+2026-01-21 09:55:17,410 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:55:17,411 - cli.commands - INFO - No historical data found for 000089, fetching all data
+2026-01-21 09:55:17,411 - services.historical_data_service - INFO - Fetching historical data for 000089 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:55:17,863 - services.historical_data_service - WARNING - Network/API error for 000089 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.9s...
+2026-01-21 09:55:19,583 - services.historical_data_service - INFO - Successfully fetched 6462 records for 000078 using stock_zh_a_hist_tx
+2026-01-21 09:55:19,587 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:55:19,588 - cli.commands - INFO - No historical data found for 000090, fetching all data
+2026-01-21 09:55:19,588 - services.historical_data_service - INFO - Fetching historical data for 000090 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:55:20,104 - services.historical_data_service - WARNING - Network/API error for 000090 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 2.1s...
+2026-01-21 09:55:20,570 - services.historical_data_service - INFO - Fetching historical data for 000088 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:55:22,208 - services.historical_data_service - INFO - Fetching historical data for 000090 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:55:22,734 - services.historical_data_service - INFO - Fetching historical data for 000089 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:55:27,404 - services.historical_data_service - INFO - Successfully stored 7721 historical records for 000019
+  [OK] initial sync: 7721 records stored
+[8/5797] Completed 000020
+2026-01-21 09:55:47,858 - services.historical_data_service - INFO - Successfully fetched 6291 records for 000090 using stock_zh_a_hist_tx
+2026-01-21 09:55:47,864 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:55:47,865 - cli.commands - INFO - No historical data found for 000096, fetching all data
+2026-01-21 09:55:47,865 - services.historical_data_service - INFO - Fetching historical data for 000096 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:55:48,265 - services.historical_data_service - INFO - Successfully fetched 6755 records for 000088 using stock_zh_a_hist_tx
+2026-01-21 09:55:48,268 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:55:48,269 - cli.commands - INFO - No historical data found for 000099, fetching all data
+2026-01-21 09:55:48,269 - services.historical_data_service - INFO - Fetching historical data for 000099 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:55:48,538 - services.historical_data_service - WARNING - Network/API error for 000096 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.5s...
+2026-01-21 09:55:48,737 - services.historical_data_service - WARNING - Network/API error for 000099 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.7s...
+2026-01-21 09:55:49,423 - services.historical_data_service - INFO - Successfully fetched 6663 records for 000089 using stock_zh_a_hist_tx
+2026-01-21 09:55:49,428 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:55:49,428 - cli.commands - INFO - No historical data found for 000100, fetching all data
+2026-01-21 09:55:49,428 - services.historical_data_service - INFO - Fetching historical data for 000100 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:55:49,870 - services.historical_data_service - WARNING - Network/API error for 000100 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.9s...
+2026-01-21 09:55:54,078 - services.historical_data_service - INFO - Fetching historical data for 000096 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:55:54,475 - services.historical_data_service - INFO - Fetching historical data for 000099 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:55:56,749 - services.historical_data_service - INFO - Fetching historical data for 000100 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:56:17,364 - services.historical_data_service - INFO - Successfully fetched 4989 records for 000100 using stock_zh_a_hist_tx
+2026-01-21 09:56:17,370 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:56:17,371 - cli.commands - INFO - No historical data found for 000150, fetching all data
+2026-01-21 09:56:17,371 - services.historical_data_service - INFO - Fetching historical data for 000150 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:56:17,834 - services.historical_data_service - WARNING - Network/API error for 000150 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.8s...
+2026-01-21 09:56:18,074 - services.historical_data_service - INFO - Successfully fetched 6130 records for 000096 using stock_zh_a_hist_tx
+2026-01-21 09:56:18,082 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:56:18,083 - cli.commands - INFO - No historical data found for 000151, fetching all data
+2026-01-21 09:56:18,083 - services.historical_data_service - INFO - Fetching historical data for 000151 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:56:18,782 - services.historical_data_service - INFO - Successfully fetched 6008 records for 000099 using stock_zh_a_hist_tx
+2026-01-21 09:56:18,787 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:56:18,788 - cli.commands - INFO - No historical data found for 000153, fetching all data
+2026-01-21 09:56:18,788 - services.historical_data_service - INFO - Fetching historical data for 000153 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:56:18,867 - services.historical_data_service - WARNING - Network/API error for 000151 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.9s...
+2026-01-21 09:56:19,408 - services.historical_data_service - WARNING - Network/API error for 000153 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.4s...
+2026-01-21 09:56:22,674 - services.historical_data_service - INFO - Fetching historical data for 000150 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:56:24,735 - services.historical_data_service - INFO - Fetching historical data for 000151 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:56:25,822 - services.historical_data_service - INFO - Fetching historical data for 000153 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:56:46,741 - services.historical_data_service - INFO - Successfully fetched 5063 records for 000150 using stock_zh_a_hist_tx
+2026-01-21 09:56:46,748 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:56:46,748 - cli.commands - INFO - No historical data found for 000155, fetching all data
+2026-01-21 09:56:46,749 - services.historical_data_service - INFO - Fetching historical data for 000155 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:56:47,355 - services.historical_data_service - WARNING - Network/API error for 000155 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.4s...
+2026-01-21 09:56:48,329 - services.historical_data_service - INFO - Successfully stored 7695 historical records for 000020
+  [OK] initial sync: 7695 records stored
+[9/5797] Completed 000021
+2026-01-21 09:56:49,072 - services.historical_data_service - INFO - Successfully fetched 6095 records for 000151 using stock_zh_a_hist_tx
+2026-01-21 09:56:49,077 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:56:49,081 - cli.commands - INFO - No historical data found for 000156, fetching all data
+2026-01-21 09:56:49,081 - services.historical_data_service - INFO - Fetching historical data for 000156 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:56:49,790 - services.historical_data_service - WARNING - Network/API error for 000156 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.8s...
+2026-01-21 09:56:49,935 - services.historical_data_service - INFO - Successfully fetched 5738 records for 000153 using stock_zh_a_hist_tx
+2026-01-21 09:56:49,939 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:56:49,940 - cli.commands - INFO - No historical data found for 000157, fetching all data
+2026-01-21 09:56:49,940 - services.historical_data_service - INFO - Fetching historical data for 000157 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:56:50,598 - services.historical_data_service - WARNING - Network/API error for 000157 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 2.6s...
+2026-01-21 09:56:51,711 - services.historical_data_service - INFO - Fetching historical data for 000155 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:56:53,197 - services.historical_data_service - INFO - Fetching historical data for 000157 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:56:56,594 - services.historical_data_service - INFO - Fetching historical data for 000156 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:57:17,048 - services.historical_data_service - INFO - Successfully fetched 5474 records for 000155 using stock_zh_a_hist_tx
+2026-01-21 09:57:17,055 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:57:17,055 - cli.commands - INFO - No historical data found for 000158, fetching all data
+2026-01-21 09:57:17,055 - services.historical_data_service - INFO - Fetching historical data for 000158 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:57:17,499 - services.historical_data_service - WARNING - Network/API error for 000158 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.5s...
+2026-01-21 09:57:17,977 - services.historical_data_service - INFO - Successfully fetched 5995 records for 000157 using stock_zh_a_hist_tx
+2026-01-21 09:57:17,981 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:57:17,982 - cli.commands - INFO - No historical data found for 000159, fetching all data
+2026-01-21 09:57:17,982 - services.historical_data_service - INFO - Fetching historical data for 000159 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:57:18,424 - services.historical_data_service - WARNING - Network/API error for 000159 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 5.4s...
+2026-01-21 09:57:21,205 - services.historical_data_service - INFO - Successfully fetched 4367 records for 000156 using stock_zh_a_hist_tx
+2026-01-21 09:57:21,209 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:57:21,210 - cli.commands - INFO - No historical data found for 000166, fetching all data
+2026-01-21 09:57:21,210 - services.historical_data_service - INFO - Fetching historical data for 000166 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:57:21,999 - services.historical_data_service - INFO - Fetching historical data for 000158 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:57:22,022 - services.historical_data_service - WARNING - Network/API error for 000166 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 4.0s...
+2026-01-21 09:57:23,849 - services.historical_data_service - INFO - Fetching historical data for 000159 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:57:26,051 - services.historical_data_service - INFO - Fetching historical data for 000166 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:57:37,759 - services.historical_data_service - INFO - Successfully fetched 2642 records for 000166 using stock_zh_a_hist_tx
+2026-01-21 09:57:37,764 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:57:37,764 - cli.commands - INFO - No historical data found for 000301, fetching all data
+2026-01-21 09:57:37,764 - services.historical_data_service - INFO - Fetching historical data for 000301 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:57:39,153 - services.historical_data_service - WARNING - Network/API error for 000301 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.2s...
+2026-01-21 09:57:45,306 - services.historical_data_service - INFO - Fetching historical data for 000301 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:57:46,127 - services.historical_data_service - INFO - Successfully fetched 6036 records for 000158 using stock_zh_a_hist_tx
+2026-01-21 09:57:46,131 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:57:46,132 - cli.commands - INFO - No historical data found for 000333, fetching all data
+2026-01-21 09:57:46,132 - services.historical_data_service - INFO - Fetching historical data for 000333 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:57:46,832 - services.historical_data_service - WARNING - Network/API error for 000333 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.8s...
+2026-01-21 09:57:48,224 - services.historical_data_service - INFO - Successfully fetched 5884 records for 000159 using stock_zh_a_hist_tx
+2026-01-21 09:57:48,228 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:57:48,228 - cli.commands - INFO - No historical data found for 000338, fetching all data
+2026-01-21 09:57:48,228 - services.historical_data_service - INFO - Fetching historical data for 000338 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:57:49,605 - services.historical_data_service - WARNING - Network/API error for 000338 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.6s...
+2026-01-21 09:57:50,665 - services.historical_data_service - INFO - Fetching historical data for 000333 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:57:56,210 - services.historical_data_service - INFO - Fetching historical data for 000338 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:58:03,496 - services.historical_data_service - INFO - Successfully fetched 2938 records for 000333 using stock_zh_a_hist_tx
+2026-01-21 09:58:03,500 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:58:03,501 - cli.commands - INFO - No historical data found for 000400, fetching all data
+2026-01-21 09:58:03,501 - services.historical_data_service - INFO - Fetching historical data for 000400 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:58:03,977 - services.historical_data_service - WARNING - Network/API error for 000400 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 6.0s...
+2026-01-21 09:58:08,652 - services.historical_data_service - INFO - Successfully stored 7658 historical records for 000021
+  [OK] initial sync: 7658 records stored
+[10/5797] Completed 000023
+2026-01-21 09:58:09,955 - services.historical_data_service - INFO - Fetching historical data for 000400 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:58:10,364 - services.historical_data_service - INFO - Successfully fetched 5924 records for 000301 using stock_zh_a_hist_tx
+2026-01-21 09:58:10,368 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:58:10,369 - cli.commands - INFO - No historical data found for 000401, fetching all data
+2026-01-21 09:58:10,369 - services.historical_data_service - INFO - Fetching historical data for 000401 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:58:10,998 - services.historical_data_service - WARNING - Network/API error for 000401 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.0s...
+2026-01-21 09:58:13,996 - services.historical_data_service - INFO - Fetching historical data for 000401 using stock_zh_a_hist_tx from None to None (attempt 1/6)
+2026-01-21 09:58:14,654 - services.historical_data_service - INFO - Successfully fetched 4492 records for 000338 using stock_zh_a_hist_tx
+2026-01-21 09:58:14,658 - models.database - INFO - Connected to database at data/stock.duckdb
+2026-01-21 09:58:14,659 - cli.commands - INFO - No historical data found for 000402, fetching all data
+2026-01-21 09:58:14,659 - services.historical_data_service - INFO - Fetching historical data for 000402 using stock_zh_a_hist from None to None (attempt 1/6)
+2026-01-21 09:58:16,159 - services.historical_data_service - WARNING - Network/API error for 000402 using stock_zh_a_hist (attempt 1): ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response')). Retrying in 3.2s...

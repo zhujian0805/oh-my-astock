@@ -1,5 +1,9 @@
 """Sina Finance API service for fetching stock data."""
 
+# Configure HTTP/SSL/tqdm BEFORE any other imports
+from lib.http_config import configure_all
+configure_all()
+
 import requests
 import re
 import math
