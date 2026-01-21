@@ -6,6 +6,9 @@ import ssl
 import urllib3
 import warnings
 
+# Disable tqdm progress bars BEFORE any other imports
+os.environ['TQDM_DISABLE'] = '1'
+
 # Set environment variables BEFORE importing any HTTP libraries
 ssl_env_vars = [
     ('REQUESTS_CA_BUNDLE', ''),
@@ -22,6 +25,48 @@ for var, value in ssl_env_vars:
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 warnings.filterwarnings('ignore', message='Unverified HTTPS request')
+
+# Monkey-patch tqdm to disable progress bars BEFORE importing akshare
+try:
+    import sys
+    from unittest.mock import MagicMock
+
+    # Create a dummy tqdm class that doesn't display anything
+    class NoOpTqdm:
+        def __init__(self, *args, **kwargs):
+            self.iterable = args[0] if args else []
+            self.n = 0
+            self.total = kwargs.get('total', len(self.iterable) if hasattr(self.iterable, '__len__') else None)
+
+        def __iter__(self):
+            return iter(self.iterable)
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            pass
+
+        def update(self, n=1):
+            self.n += n
+
+        def close(self):
+            pass
+
+        def set_description(self, desc):
+            pass
+
+        @staticmethod
+        def disable(flag):
+            pass
+
+    # Inject into sys.modules before akshare imports it
+    sys.modules['tqdm.std'] = MagicMock()
+    sys.modules['tqdm.std'].tqdm = NoOpTqdm
+    sys.modules['tqdm.auto'] = MagicMock()
+    sys.modules['tqdm.auto'].tqdm = NoOpTqdm
+except Exception:
+    pass
 
 # Configure SSL context globally
 ssl_context = ssl.create_default_context()
