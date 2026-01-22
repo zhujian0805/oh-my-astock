@@ -10,6 +10,7 @@ from lib.logging import setup_logging, get_logger
 import json
 import concurrent.futures
 from typing import Dict, Any
+from datetime import datetime
 
 
 @click.group()
@@ -57,13 +58,13 @@ def _setup_database_and_table(db_path: str) -> bool:
     return True
 
 
-def _process_single_stock(db_path: str, stock_code: str, force_full_sync: bool) -> Dict[str, Any]:
+def _process_single_stock(db_path: str, stock_code: str, sync_strategy: str) -> Dict[str, Any]:
     """Process a single stock for historical data sync.
 
     Args:
         db_path: Database path (for creating thread-local connection)
         stock_code: Stock code to process
-        force_full_sync: Whether to force full sync
+        sync_strategy: 'full_sync', 'today_only', or 'smart_check'
 
     Returns:
         Dictionary with processing results
@@ -74,12 +75,18 @@ def _process_single_stock(db_path: str, stock_code: str, force_full_sync: bool) 
         # Create a new service instance with its own connection for this thread
         hist_service = HistoricalDataService(db_path)
 
-        if force_full_sync:
+        if sync_strategy == 'full_sync':
             # Force full sync - fetch all historical data
-            logger.info(f"Force full sync for {stock_code}")
+            logger.info(f"Full sync for {stock_code}")
             data = hist_service.fetch_historical_data(stock_code)
             action = "full sync"
-        else:
+        elif sync_strategy == 'today_only':
+            # Fetch only today's data
+            logger.info(f"Fetching today's data for {stock_code}")
+            today = datetime.now().strftime('%Y%m%d')
+            data = hist_service.fetch_historical_data(stock_code, start_date=today, end_date=today)
+            action = "today's data only"
+        else:  # smart_check (legacy behavior)
             # Smart sync - check what data we need
             has_data = hist_service.get_latest_date_for_stock(stock_code) is not None
 
@@ -119,30 +126,33 @@ def _process_single_stock(db_path: str, stock_code: str, force_full_sync: bool) 
 @click.option('--limit', default=None, type=int, help='Limit number of stocks to process')
 @click.option('--force-full-sync', is_flag=True, help='Force full sync for all stocks (ignore existing data)')
 @click.option('--max-threads', default=10, type=int, help='Maximum number of threads for parallel processing (default: 10, recommended: 5-15)')
-def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_full_sync, max_threads):
-    """Sync historical price data for stocks - smart incremental sync that fetches only missing data.
+@click.option('--batch-size', default=10, type=int, help='Number of stocks to accumulate before bulk insert (default: 10)')
+@click.option('--chunk-size', default=None, type=int, help='Number of records per bulk insert chunk (default: 1000, set via BULK_INSERT_CHUNK_SIZE env var)')
+def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_full_sync, max_threads, batch_size, chunk_size):
+    """Sync historical price data for stocks - smart incremental sync with batch optimization.
 
     This command performs an intelligent sync that:
-    - Checks existing data and only fetches missing historical prices
-    - Prioritizes stocks with no historical data first
-    - Uses parallel processing for better performance
-    - Updates data incrementally to stay current
+    1. Refreshes stock_name_code table with all available stocks
+    2. Identifies stocks missing from stock_historical_data (high priority)
+    3. Accumulates 100 stocks and performs batch bulk insert for efficiency
+    4. Checks remaining stocks for missing today's data and fetches if needed
+    5. Uses parallel processing for better performance
 
     The default database path is './stock.duckdb' in the current directory.
     Use --default-db to use the default path, or --db-path to specify a custom path.
 
     Examples:
-        # Sync all stocks using default database
+        # Sync all stocks using default database with batch optimization
         stocklib sync-historical --all-stocks --default-db
 
-        # Sync specific stocks with custom thread count
-        stocklib sync-historical --stock-codes 000001,600000 --max-threads 5
+        # Sync specific stocks with custom thread count and batch size
+        stocklib sync-historical --stock-codes 000001,600000 --max-threads 5 --batch-size 50
 
         # Force full sync for all stocks (re-download all historical data)
         stocklib sync-historical --all-stocks --force-full-sync --max-threads 10
 
-        # Sync first 100 stocks from database
-        stocklib sync-historical --all-stocks --limit 100
+        # Sync first 100 stocks with custom chunk size for bulk inserts
+        stocklib sync-historical --all-stocks --limit 100 --chunk-size 500
     """
     if default_db:
         db_path = Config.get_database_path()
@@ -155,38 +165,50 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
 
     # Initialize services
     db_service = DatabaseService(db_path)
+    hist_service = HistoricalDataService(db_path)
 
     # Ensure database exists
     if not db_service.database_exists():
         click.echo(f"Database does not exist at {db_path}", err=True)
         return 1
 
+    # Ensure database is initialized
+    if not _setup_database_and_table(str(db_path)):
+        return 1
+
+    # Step 1: Fetch all stock_name_code to refresh the stock_name_code table
+    click.echo("Step 1: Refreshing stock_name_code table...")
+    stocks = db_service.get_all_stocks()
+    all_stock_codes = [stock.code for stock in stocks]
+    click.echo(f"  Found {len(all_stock_codes)} stocks in database")
+
     # Get list of stock codes to process
+    codes_to_process = []  # Initialize for Step 5 reference
+    missing_all = []  # Initialize for sync strategy function
+    missing_today = []  # Initialize for sync strategy function
     if stock_codes:
         codes_to_process = [code.strip() for code in stock_codes.split(',')]
-        click.echo(f"Processing {len(codes_to_process)} specified stocks: {', '.join(codes_to_process)}")
+        click.echo(f"Processing {len(codes_to_process)} specified stocks")
     elif all_stocks:
-        stocks = db_service.get_all_stocks()
-        all_codes = [stock.code for stock in stocks]
+        # Step 2: Compute optimized fetching list using the new method
+        click.echo("\nStep 2: Computing optimized fetching list...")
+        fetching_list = hist_service.compute_fetching_list(all_stock_codes)
 
-        # Get codes that already have historical data
-        # Create a temporary service to check existing data
-        temp_hist_service = HistoricalDataService(db_path)
-        existing_codes = set(temp_hist_service.get_stocks_with_historical_data())
+        missing_all = fetching_list['missing_all']
+        missing_today = fetching_list['missing_today']
+        skip_codes = fetching_list['skip']
 
-        # Prioritize codes without historical data first
-        missing_codes = [code for code in all_codes if code not in existing_codes]
-        existing_codes_list = [code for code in all_codes if code in existing_codes]
+        click.echo(f"  Found {len(missing_all)} stocks with no historical data (will do full sync)")
+        click.echo(f"  Found {len(missing_today)} stocks missing today's data (will fetch today only)")
+        click.echo(f"  Found {len(skip_codes)} stocks already up-to-date (will skip)")
 
-        # Combine lists: missing codes first, then existing codes
-        codes_to_process = missing_codes + existing_codes_list
+        # Prioritize: missing_all first, then missing_today, skip up-to-date
+        codes_to_process = missing_all + missing_today
 
         if limit:
             codes_to_process = codes_to_process[:limit]
 
-        click.echo(f"Processing all {len(codes_to_process)} stocks from database")
-        click.echo(f"  - {len(missing_codes)} stocks without historical data (prioritized first)")
-        click.echo(f"  - {len(existing_codes_list)} stocks with existing historical data")
+        click.echo(f"  Processing {len(codes_to_process)} stocks total (skipping {len(skip_codes)} up-to-date stocks)")
     else:
         click.echo("Error: Must specify --stock-codes or --all-stocks", err=True)
         return 1
@@ -195,22 +217,28 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
         click.echo("No stocks to process", err=True)
         return 1
 
-    # Ensure database is initialized
-    if not _setup_database_and_table(str(db_path)):
-        return 1
+    click.echo(f"\nStep 3: Starting optimized parallel fetch for {len(codes_to_process)} stocks using {max_threads} threads...")
+    click.echo(f"  Batch size: {batch_size} stocks per bulk insert\n")
 
-    click.echo(f"Starting smart sync for {len(codes_to_process)} stocks using {max_threads} threads...")
     results = {}
-
-    # Create a main service instance for storing data from worker threads
-    main_hist_service = HistoricalDataService(db_path)
-
-    # Process stocks in parallel
+    batch_accumulator = {}
+    total_inserted = 0
     failed_stocks = []
+
+    # Process stocks in parallel with batch accumulation
     with concurrent.futures.ThreadPoolExecutor(max_workers=max_threads) as executor:
-        # Submit all tasks
+        # Determine sync strategy for each stock
+        def get_sync_strategy(stock_code: str) -> str:
+            if stock_code in missing_all:
+                return 'full_sync'
+            elif stock_code in missing_today:
+                return 'today_only'
+            else:
+                return 'smart_check'  # fallback
+
+        # Submit all tasks with appropriate sync strategies
         future_to_stock = {
-            executor.submit(_process_single_stock, str(db_path), stock_code, force_full_sync): stock_code
+            executor.submit(_process_single_stock, str(db_path), stock_code, get_sync_strategy(stock_code)): stock_code
             for stock_code in codes_to_process
         }
 
@@ -219,35 +247,58 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
         for future in concurrent.futures.as_completed(future_to_stock):
             stock_code = future_to_stock[future]
             completed += 1
-            click.echo(f"[{completed}/{len(codes_to_process)}] Completed {stock_code}")
 
             try:
                 result = future.result()
                 results[stock_code] = result
 
                 if result['success'] and result['data'] is not None:
-                    # For now, store data immediately instead of accumulating for bulk storage
-                    stored_count = main_hist_service.store_historical_data(result['stock_code'], result['data'])
-                    results[result['stock_code']]['count'] = stored_count
+                    # Accumulate data in batch
+                    batch_accumulator[stock_code] = result['data']
 
-                    if stored_count > 0:
-                        click.echo(f"  [OK] {result['action']}: {stored_count} records stored")
-                    else:
-                        click.echo(f"  [OK] {result['action']}")
+                    click.echo(f"[{completed}/{len(codes_to_process)}] {stock_code}: {result['action']} ({result['count']} records)")
+
+                    # Check if we've accumulated enough for a bulk insert
+                    if len(batch_accumulator) >= batch_size:
+                        click.echo(f"\n  → Performing bulk insert of {len(batch_accumulator)} stocks...")
+                        logger.debug(f"Batch accumulator reached {len(batch_accumulator)} stocks, initiating bulk insert")
+                        batch_results = hist_service.bulk_store_historical_data(batch_accumulator, chunk_size)
+                        batch_total = sum(batch_results.values())
+                        total_inserted += batch_total
+                        logger.info(f"Bulk insert completed: {batch_total} records stored across {len(batch_results)} stocks")
+                        click.echo(f"  ✓ Bulk insert complete: {batch_total} records stored\n")
+                        batch_accumulator = {}
+
                 elif result['success']:
                     # No data to store (already up-to-date)
-                    click.echo(f"  [OK] {result['action']}")
+                    click.echo(f"[{completed}/{len(codes_to_process)}] {stock_code}: {result['action']}")
                 else:
                     failed_stocks.append(stock_code)
-                    click.echo(f"  [FAIL] Failed: {result.get('error', 'Unknown error')}")
+                    click.echo(f"[{completed}/{len(codes_to_process)}] {stock_code}: FAILED - {result.get('error', 'Unknown error')}")
 
             except Exception as e:
                 logger.error(f"Unexpected error processing {stock_code}: {e}")
                 results[stock_code] = {'count': 0, 'action': 'failed'}
                 failed_stocks.append(stock_code)
-                click.echo(f"  [ERROR] Unexpected error: {e}")
+                click.echo(f"[{completed}/{len(codes_to_process)}] {stock_code}: ERROR - {e}")
 
-        # All processing is done in the loop above
+    # Step 4: Handle remaining accumulated data
+    if batch_accumulator:
+        click.echo(f"\nStep 4: Performing final bulk insert of {len(batch_accumulator)} remaining stocks...")
+        batch_results = hist_service.bulk_store_historical_data(batch_accumulator, chunk_size)
+        batch_total = sum(batch_results.values())
+        total_inserted += batch_total
+        click.echo(f"  ✓ Final bulk insert complete: {batch_total} records stored")
+
+    # Summary
+    click.echo("\n" + "="*80)
+    click.echo("Sync Summary:")
+    successful = sum(1 for r in results.values() if r.get('success'))
+    click.echo(f"  ✓ Successful: {successful} stocks")
+    click.echo(f"  ✗ Failed: {len(failed_stocks)} stocks")
+    click.echo(f"  ⬆ Total records inserted: {total_inserted}")
+    if failed_stocks:
+        click.echo(f"  Failed stocks: {', '.join(failed_stocks[:10])}" + (" ..." if len(failed_stocks) > 10 else ""))
 
 
 @cli.command()

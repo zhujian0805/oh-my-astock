@@ -79,7 +79,7 @@ class DatabaseService:
 
     @timed_operation("stock_insertion")
     def insert_stocks(self, stocks: List[Stock]) -> int:
-        """Insert or update stocks in database.
+        """Insert or update stocks in database using batch operation.
 
         Args:
             stocks: List of Stock objects to insert
@@ -92,20 +92,29 @@ class DatabaseService:
             return 0
 
         conn = self.db_connection.connect()
-        inserted = 0
 
-        for stock in stocks:
-            try:
-                conn.execute(
-                    "INSERT OR REPLACE INTO stock_name_code (code, name, metadata) VALUES (?, ?, ?)",
-                    (stock.code, stock.name, json.dumps(stock.metadata) if stock.metadata else None)
-                )
-                inserted += 1
-            except Exception as e:
-                logger.error(f"Failed to insert stock {stock.code}: {e}")
+        try:
+            # Prepare all values for batch insertion
+            values = [
+                (stock.code, stock.name, json.dumps(stock.metadata) if stock.metadata else None)
+                for stock in stocks
+            ]
 
-        logger.info(f"Successfully inserted {inserted} out of {len(stocks)} stocks")
-        return inserted
+            # Use transaction + executemany for efficiency
+            conn.execute("BEGIN TRANSACTION")
+            conn.executemany(
+                "INSERT OR REPLACE INTO stock_name_code (code, name, metadata) VALUES (?, ?, ?)",
+                values
+            )
+            conn.execute("COMMIT")
+
+            logger.info(f"Successfully batch inserted {len(values)} stocks")
+            return len(values)
+
+        except Exception as e:
+            conn.execute("ROLLBACK")
+            logger.error(f"Failed to batch insert stocks: {e}")
+            return 0
 
     @timed_operation("stock_retrieval")
     def get_all_stocks(self) -> List[Stock]:

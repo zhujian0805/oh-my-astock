@@ -51,7 +51,7 @@ class Config:
         Returns:
             Number of threads
         """
-        return int(os.getenv("DUCKDB_THREADS", "4"))
+        return int(os.getenv("DUCKDB_THREADS", "2"))
 
     @staticmethod
     def get_memory_limit() -> str:
@@ -60,4 +60,13 @@ class Config:
         Returns:
             Memory limit string
         """
-        return os.getenv("DUCKDB_MEMORY_LIMIT", "2GB")
+        return os.getenv("DUCKDB_MEMORY_LIMIT", "4GB")
+
+    @staticmethod
+    def get_bulk_insert_chunk_size() -> int:
+        """Get chunk size for bulk inserts.
+
+        Returns:
+            Number of records per chunk
+        """
+        return int(os.getenv("BULK_INSERT_CHUNK_SIZE", "1000"))
