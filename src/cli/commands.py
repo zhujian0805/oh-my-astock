@@ -50,6 +50,11 @@ def _setup_database_and_table(db_path: str) -> bool:
             click.echo("Database initialization failed", err=True)
             return False
 
+    # Ensure stock_name_code table exists
+    if not db_service.create_stock_name_code_table():
+        click.echo("Failed to create stock_name_code table", err=True)
+        return False
+
     hist_service = HistoricalDataService(db_path)
     if not hist_service.create_historical_data_table():
         click.echo("Failed to create historical data table", err=True)

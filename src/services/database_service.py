@@ -25,6 +25,32 @@ class DatabaseService:
         self.db_path = Config.get_database_path(db_path)
         self.db_connection = DatabaseConnection(self.db_path)
 
+    @timed_operation("stock_name_code_table_creation")
+    def create_stock_name_code_table(self) -> bool:
+        """Create the stock_name_code table if it doesn't exist.
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            conn = self.db_connection.connect()
+
+            # Create stock_name_code table if it doesn't exist
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS stock_name_code (
+                    code VARCHAR PRIMARY KEY,
+                    name VARCHAR NOT NULL,
+                    metadata JSON
+                )
+            """)
+
+            logger.info("Successfully created stock_name_code table")
+            return True
+
+        except Exception as e:
+            logger.error(f"Failed to create stock_name_code table: {e}")
+            return False
+
     @timed_operation("database_initialization")
     def initialize_database(self) -> bool:
         """Initialize the database and create basic schema.
@@ -37,13 +63,8 @@ class DatabaseService:
             conn = self.db_connection.connect()
 
             # Create basic stock_name_code table if it doesn't exist
-            conn.execute("""
-                CREATE TABLE IF NOT EXISTS stock_name_code (
-                    code VARCHAR PRIMARY KEY,
-                    name VARCHAR NOT NULL,
-                    metadata JSON
-                )
-            """)
+            if not self.create_stock_name_code_table():
+                return False
 
             # Create historical data table if it doesn't exist
             conn.execute("""
@@ -76,8 +97,6 @@ class DatabaseService:
         except Exception as e:
             logger.error(f"Database initialization failed: {e}")
             return False
-
-    @timed_operation("stock_insertion")
     def insert_stocks(self, stocks: List[Stock]) -> int:
         """Insert or update stocks in database using batch operation.
 
