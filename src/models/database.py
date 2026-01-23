@@ -1,6 +1,7 @@
 """Database connection model."""
 
 import duckdb
+from pathlib import Path
 from typing import Optional
 from lib.config import Config
 from lib.logging import get_logger
@@ -29,7 +30,7 @@ class DatabaseConnection:
             DuckDB connection object
         """
         if self._connection is None:
-            Config.ensure_path_exists(self.db_path)
+            Config.ensure_path_exists(str(self.db_path))  # Convert Path to str
             self._connection = duckdb.connect(str(self.db_path))
 
             # Configure performance settings

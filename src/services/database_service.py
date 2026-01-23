@@ -3,6 +3,7 @@
 import os
 import json
 from typing import Optional, List
+from pathlib import Path
 from models.database import DatabaseConnection
 from models.stock import Stock
 from lib.config import Config
@@ -22,8 +23,9 @@ class DatabaseService:
         Args:
             db_path: Path to database file, uses default if None
         """
-        self.db_path = Config.get_database_path(db_path)
-        self.db_connection = DatabaseConnection(self.db_path)
+        path_obj = Config.get_database_path(db_path)
+        self.db_path = path_obj
+        self.db_connection = DatabaseConnection(str(path_obj))
 
     @timed_operation("stock_name_code_table_creation")
     def create_stock_name_code_table(self) -> bool:

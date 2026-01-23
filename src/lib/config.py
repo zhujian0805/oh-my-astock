@@ -15,7 +15,7 @@ class Config:
         Priority order:
         1. Custom path provided via db_path parameter
         2. Environment variable ASTOCK_DB_PATH
-        3. Default: ./stock.duckdb (in current working directory)
+        3. Default: ~/data/stock.duckdb
 
         Args:
             db_path: Custom database path
@@ -31,8 +31,8 @@ class Config:
         if env_path:
             return Path(env_path)
 
-        # Default path in current working directory (all platforms)
-        return Path.cwd() / "stock.duckdb"
+        # Default path to ~/data/stock.duckdb (all platforms)
+        return Path.home() / "data" / "stock.duckdb"
 
     @staticmethod
     def ensure_path_exists(db_path: str) -> None:

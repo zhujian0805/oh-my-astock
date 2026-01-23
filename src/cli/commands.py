@@ -143,7 +143,7 @@ def sync_historical(db_path, default_db, stock_codes, all_stocks, limit, force_f
     4. Checks remaining stocks for missing today's data and fetches if needed
     5. Uses parallel processing for better performance
 
-    The default database path is './stock.duckdb' in the current directory.
+    The default database path is '~/data/stock.duckdb'.
     Use --default-db to use the default path, or --db-path to specify a custom path.
 
     Examples:
@@ -317,7 +317,7 @@ def init_db(db_path, default):
     - Historical price data
     - Financial metrics and metadata
 
-    The default database path is './stock.duckdb' in the current directory.
+    The default database path is '~/data/stock.duckdb'.
     If the database already exists, this command does nothing.
 
     Examples:
@@ -368,7 +368,7 @@ def fetch_stocks(db_path, default_db, validate_only):
 
     This command fetches stock metadata only - use 'sync-historical' for price data.
 
-    The default database path is './stock.duckdb' in the current directory.
+    The default database path is '~/data/stock.duckdb'.
 
     Examples:
         # Fetch and store stocks in default database
@@ -448,7 +448,7 @@ def list_stocks(db_path, default_db, limit):
     Outputs stock information as JSON array to stdout. Each stock object
     contains basic information like code, name, market, etc.
 
-    The default database path is './stock.duckdb' in the current directory.
+    The default database path is '~/data/stock.duckdb'.
 
     Examples:
         # List all stocks from default database
@@ -496,7 +496,7 @@ def list_tables(db_path, default_db):
     Outputs table names as JSON array to stdout. Useful for checking
     database structure and available data.
 
-    The default database path is './stock.duckdb' in the current directory.
+    The default database path is '~/data/stock.duckdb'.
 
     Examples:
         # List tables in default database
@@ -543,7 +543,7 @@ def get_historical(db_path, default_db, stock_code, start_date, end_date, limit,
     Outputs historical price data as JSON array or formatted table.
     Data includes open/high/low/close prices, volume, turnover, and technical indicators.
 
-    The default database path is './stock.duckdb' in the current directory.
+    The default database path is '~/data/stock.duckdb'.
     Results are ordered by date (most recent first) unless limited.
 
     Examples:
