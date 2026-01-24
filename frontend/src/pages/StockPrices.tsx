@@ -63,23 +63,23 @@ const StockPrices: React.FC = () => {
         
         <div className="flex items-center gap-2 w-full md:w-auto">
           <div className="flex flex-col z-20 relative">
-             <label className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-0.5">Start Date</label>
+             <label className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-0.5">开始日期</label>
              <DatePicker
                selected={startDate}
                onChange={(date) => setStartDate(date)}
                dateFormat="yyyy-MM-dd"
                className="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-               placeholderText="Start date"
+               placeholderText="开始日期"
              />
           </div>
           <div className="flex flex-col z-20 relative">
-             <label className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-0.5">End Date</label>
+             <label className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-0.5">结束日期</label>
              <DatePicker
                selected={endDate}
                onChange={(date) => setEndDate(date)}
                dateFormat="yyyy-MM-dd"
                className="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-               placeholderText="End date"
+               placeholderText="结束日期"
              />
           </div>
         </div>
@@ -123,10 +123,10 @@ const StockPrices: React.FC = () => {
                 </svg>
               </div>
               <h3 className="text-lg font-normal text-gray-900 dark:text-white">
-                Select a Stock
+                选择股票
               </h3>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                Choose a stock and date range to view price history
+                选择股票和日期范围查看价格历史
               </p>
             </div>
           </div>

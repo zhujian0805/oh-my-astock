@@ -13,7 +13,7 @@ import StockPrices from '../pages/StockPrices';
 export const menuItems: MenuItem[] = [
   {
     id: 'stock-prices',
-    label: 'Stock Prices',
+    label: '股票价格',
     icon: '📈',
     component: StockPrices,
   },

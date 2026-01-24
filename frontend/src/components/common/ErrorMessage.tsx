@@ -30,7 +30,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ error, onRetry }) => {
             </svg>
           </div>
           <div className="ml-3">
-            <h3 className="text-sm font-medium text-red-900">Error</h3>
+            <h3 className="text-sm font-medium text-red-900">错误</h3>
             <div className="mt-2 text-sm text-red-700">{message}</div>
             {onRetry && (
               <div className="mt-4">
@@ -38,7 +38,7 @@ const ErrorMessage: React.FC<ErrorMessageProps> = ({ error, onRetry }) => {
                   onClick={onRetry}
                   className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
                 >
-                  Try Again
+                  重试
                 </button>
               </div>
             )}

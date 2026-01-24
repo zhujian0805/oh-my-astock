@@ -44,14 +44,14 @@ const StockSelector: React.FC<StockSelectorProps> = ({
   }
 
   if (isLoading && stocks.length === 0) {
-    return <LoadingSpinner message="Loading stocks..." />;
+    return <LoadingSpinner message="加载股票中..." />;
   }
 
   if (stocks.length === 0) {
     return (
       <EmptyState
-        title="No stocks available"
-        description="Please initialize the database with stock data"
+        title="无可用股票"
+        description="请初始化数据库中的股票数据"
       />
     );
   }
@@ -66,9 +66,9 @@ const StockSelector: React.FC<StockSelectorProps> = ({
         >
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Selected Stock</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">已选股票</p>
               <p className="text-sm font-normal text-gray-900 dark:text-white mt-0">
-                {selectedStock ? `${selectedStock.code} - ${selectedStock.name}` : 'Select a stock'}
+                {selectedStock ? `${selectedStock.code} - ${selectedStock.name}` : '选择股票'}
               </p>
             </div>
             <div className="bg-white dark:bg-gray-600 p-1 rounded-full shadow-sm text-gray-500 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
@@ -106,7 +106,7 @@ const StockSelector: React.FC<StockSelectorProps> = ({
               <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
                 <input
                   type="text"
-                  placeholder="Search by code or name..."
+                  placeholder="按代码或名称搜索..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border-none rounded-md focus:ring-2 focus:ring-primary-500 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -118,7 +118,7 @@ const StockSelector: React.FC<StockSelectorProps> = ({
               <div className="overflow-y-auto flex-1 p-1">
                 {filteredStocks.length === 0 ? (
                   <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-                    <p>No stocks found</p>
+                    <p>未找到股票</p>
                   </div>
                 ) : (
                   filteredStocks.map((stock) => (
