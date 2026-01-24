@@ -16,7 +16,7 @@ const MenuItem: React.FC<MenuItemProps> = ({ item, isActive, onClick }) => {
           : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
       }`}
     >
-      {item.icon && <span className="text-xl material-icons-outlined">{item.icon}</span>}
+      {item.icon && <span className="text-xl">{item.icon}</span>}
       <span className="font-medium text-sm tracking-wide">{item.label}</span>
     </button>
   );

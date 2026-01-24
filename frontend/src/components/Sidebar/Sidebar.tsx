@@ -8,6 +8,7 @@ import React, { useState } from 'react';
 import { SidebarProps } from '../../types';
 import MenuItem from './MenuItem';
 import ThemeToggle from '../common/ThemeToggle';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const Sidebar: React.FC<SidebarProps> = ({
   items,
