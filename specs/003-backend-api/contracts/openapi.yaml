@@ -1,0 +1,347 @@
+openapi: 3.0.3
+info:
+  title: Stock Market Data API
+  description: |
+    RESTful API for accessing Chinese stock market data from DuckDB database.
+
+    This API provides read-only access to stock information and historical price data.
+    It serves as a data access layer between the frontend React application and the
+    backend DuckDB database.
+
+    **Features:**
+    - List all available stocks with codes and names
+    - Retrieve historical price data for any stock
+    - Health check endpoint for monitoring
+    - CORS enabled for cross-origin requests
+
+  version: 0.1.0
+  contact:
+    name: oh-my-astock
+    url: https://github.com/yourusername/oh-my-astock
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: http://localhost:5173
+    description: Frontend dev server (Vite)
+
+paths:
+  /api/health:
+    get:
+      summary: Health check endpoint
+      description: |
+        Returns the health status of the API and database connectivity.
+
+        **Status Values:**
+        - `ok`: All systems operational
+        - `degraded`: API running but database unavailable
+        - `error`: API experiencing errors
+
+      operationId: healthCheck
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Health check successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheckResponse'
+              examples:
+                healthy:
+                  value:
+                    status: ok
+                    timestamp: "2024-01-24T12:34:56.789Z"
+                    database_connected: true
+                degraded:
+                  value:
+                    status: degraded
+                    timestamp: "2024-01-24T12:34:56.789Z"
+                    database_connected: false
+                    error: "Database file not found"
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Service unavailable: Database connection failed"
+
+  /api/stocks:
+    get:
+      summary: Get all available stocks
+      description: |
+        Returns a list of all stocks available in the database with their codes and names.
+
+        **Use Case:** Populate stock selection dropdown in frontend.
+
+        **Performance:** Typically returns 1,000+ stocks in <2 seconds.
+
+      operationId: getAllStocks
+      tags:
+        - Stocks
+      responses:
+        '200':
+          description: List of stocks retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StockResponse'
+              example:
+                - code: "000001"
+                  name: "平安银行"
+                  metadata: null
+                - code: "000002"
+                  name: "万科A"
+                  metadata: null
+                - code: "600000"
+                  name: "浦发银行"
+                  metadata: null
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Failed to retrieve stocks"
+
+  /api/stocks/{code}/historical:
+    get:
+      summary: Get historical price data for a stock
+      description: |
+        Returns historical OHLCV (Open, High, Low, Close, Volume) data for a specific stock.
+
+        **Use Case:** Render price chart visualization in frontend.
+
+        **Performance:** Typically returns 250-750 records (1-3 years) in <2 seconds.
+
+        **Note:** Date range filtering and pagination are not implemented in v0.1.0.
+
+      operationId: getHistoricalData
+      tags:
+        - Stocks
+      parameters:
+        - name: code
+          in: path
+          required: true
+          description: Stock code (e.g., "000001")
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+          example: "000001"
+      responses:
+        '200':
+          description: Historical data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HistoricalDataResponse'
+              example:
+                stock_code: "000001"
+                data:
+                  - date: "2024-01-15"
+                    close_price: 12.35
+                    open_price: 12.10
+                    high_price: 12.50
+                    low_price: 12.00
+                    volume: 15420000
+                    turnover: 189567000.00
+                    amplitude: 4.13
+                    price_change_rate: 2.06
+                    price_change: 0.25
+                    turnover_rate: 1.54
+                  - date: "2024-01-16"
+                    close_price: 12.42
+                    open_price: 12.35
+                    high_price: 12.58
+                    low_price: 12.30
+                    volume: 16230000
+                    turnover: 201457000.00
+                    amplitude: 2.27
+                    price_change_rate: 0.57
+                    price_change: 0.07
+                    turnover_rate: 1.62
+        '404':
+          description: Stock not found or no historical data available
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "No historical data found for stock 999999"
+        '400':
+          description: Invalid stock code format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Invalid stock code format. Expected 6-digit code."
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                detail: "Failed to retrieve historical data"
+
+components:
+  schemas:
+    StockResponse:
+      type: object
+      required:
+        - code
+        - name
+      properties:
+        code:
+          type: string
+          description: Stock code (6-digit identifier)
+          example: "000001"
+        name:
+          type: string
+          description: Stock name in Chinese
+          example: "平安银行"
+        metadata:
+          type: object
+          nullable: true
+          description: Additional stock metadata (optional)
+          example: null
+
+    HistoricalDataPoint:
+      type: object
+      required:
+        - date
+        - close_price
+      properties:
+        date:
+          type: string
+          format: date
+          description: Trading date in ISO 8601 format (YYYY-MM-DD)
+          example: "2024-01-15"
+        close_price:
+          type: number
+          format: float
+          description: Closing price
+          example: 12.35
+        open_price:
+          type: number
+          format: float
+          nullable: true
+          description: Opening price
+          example: 12.10
+        high_price:
+          type: number
+          format: float
+          nullable: true
+          description: Highest price
+          example: 12.50
+        low_price:
+          type: number
+          format: float
+          nullable: true
+          description: Lowest price
+          example: 12.00
+        volume:
+          type: integer
+          format: int64
+          nullable: true
+          description: Trading volume
+          example: 15420000
+        turnover:
+          type: number
+          format: float
+          nullable: true
+          description: Turnover amount
+          example: 189567000.00
+        amplitude:
+          type: number
+          format: float
+          nullable: true
+          description: Price amplitude percentage
+          example: 4.13
+        price_change_rate:
+          type: number
+          format: float
+          nullable: true
+          description: Price change rate percentage
+          example: 2.06
+        price_change:
+          type: number
+          format: float
+          nullable: true
+          description: Absolute price change
+          example: 0.25
+        turnover_rate:
+          type: number
+          format: float
+          nullable: true
+          description: Turnover rate percentage
+          example: 1.54
+
+    HistoricalDataResponse:
+      type: object
+      required:
+        - stock_code
+        - data
+      properties:
+        stock_code:
+          type: string
+          description: Stock code identifier
+          example: "000001"
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoricalDataPoint'
+          description: Array of historical data points
+
+    HealthCheckResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+        - database_connected
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded, error]
+          description: Health status
+          example: ok
+        timestamp:
+          type: string
+          format: date-time
+          description: Current timestamp in ISO 8601 format
+          example: "2024-01-24T12:34:56.789Z"
+        database_connected:
+          type: boolean
+          description: Database connectivity flag
+          example: true
+        error:
+          type: string
+          nullable: true
+          description: Error message if status is not ok
+          example: null
+
+    ErrorResponse:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+          example: "Failed to retrieve stocks"
+
+tags:
+  - name: Health
+    description: Health check and monitoring endpoints
+  - name: Stocks
+    description: Stock data and historical price endpoints
+
+externalDocs:
+  description: Project README
+  url: https://github.com/yourusername/oh-my-astock

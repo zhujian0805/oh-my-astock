@@ -24,6 +24,47 @@ Oh My Astock is a professional-grade stock data management system designed speci
 - **A-Share Stock Filtering**: Automatically filters for A-share stocks (codes: 0xxxx, 3xxxx, 6xxxx, 8xxxx)
 - **Performance Enhancements**: Multi-level caching, rate limiting, and exponential backoff retry mechanisms
 
+## FastAPI Backend
+
+Oh My Astock includes a FastAPI-based REST API server for frontend integration and programmatic access to stock data.
+
+### Quick Start with Backend
+
+```bash
+# Start the backend API server
+./manage.sh start backend
+
+# The API will be available at http://localhost:8000
+# Interactive API documentation at http://localhost:8000/docs
+
+# Start both frontend and backend
+./manage.sh start all
+```
+
+### API Endpoints
+
+- `GET /api/health` - Health check and database connectivity status
+- `GET /api/stocks` - List all available stocks with pagination
+- `GET /api/stocks/{code}/historical` - Get historical price data for a specific stock
+
+### Example API Usage
+
+```python
+import requests
+
+# Health check
+response = requests.get("http://localhost:8000/api/health")
+print(response.json())
+
+# Get all stocks
+response = requests.get("http://localhost:8000/api/stocks?limit=10")
+stocks = response.json()
+
+# Get historical data for a stock
+response = requests.get("http://localhost:8000/api/stocks/000001/historical")
+data = response.json()
+```
+
 ## Features
 
 ### Core Capabilities
@@ -42,7 +83,8 @@ Oh My Astock is a professional-grade stock data management system designed speci
 - **Thread-Safe Operations**: Parallel processing with thread-local connections (safe up to 20+ concurrent threads)
 - **Data Models**: 9 validated dataclasses (Stock, Quote, Profile, Financial, Dividend, Structure, Press, etc.)
 - **CLI Interface**: 15+ commands for database, data, and query operations
-- **Modular Architecture**: Clean separation of concerns across CLI, services, models, and utilities layers
+- **FastAPI Backend**: RESTful API server with automatic OpenAPI documentation and CORS support
+- **Modular Architecture**: Clean separation of concerns across CLI, services, models, routers, and utilities layers
 - **Performance Optimization**:
   - Batch processing with configurable chunk sizes (default: 1000 records)
   - Multi-level caching with TTL-based expiration
@@ -343,6 +385,11 @@ For a complete sync of 4,000+ stocks:
 - click >= 8.0.0
 - pandas
 - requests
+- **FastAPI Backend Requirements:**
+  - fastapi >= 0.109.0
+  - uvicorn[standard] >= 0.27.0
+  - pydantic >= 2.5.0
+  - pydantic-settings >= 2.0.0
 - pytest >= 7.0.0 (for testing)
 - pytest-cov >= 4.0.0 (for coverage)
 - ruff (for linting and formatting)
@@ -436,22 +483,40 @@ src/
 │   ├── dividend.py      # Dividend data model
 │   ├── financial.py     # Financial data model
 │   └── __init__.py
+├── routers/             # FastAPI route handlers
+│   ├── stocks.py        # Stock API endpoints
+│   └── __init__.py
 ├── services/            # Business logic
 │   ├── api_service.py   # Akshare API integration
 │   ├── database_service.py # Database operations
 │   ├── historical_data_service.py # Historical data management with batch processing
 │   ├── sina_finance_service.py # Sina Finance API integration
+│   ├── stock_service.py # Stock business logic for FastAPI
 │   └── __init__.py
-└── lib/                 # Utilities
-    ├── config.py        # Configuration management
-    ├── logging.py       # Structured logging setup
-    ├── debug.py         # Debug utilities and metrics
-    ├── db_utils.py      # Database utilities
-    ├── http_config.py   # Centralized HTTP/SSL configuration
-    ├── cache.py         # Caching mechanisms
-    ├── rate_limiter.py  # Rate limiting
-    ├── retry.py         # Retry logic with exponential backoff
-    └── __init__.py
+├── lib/                 # Utilities
+│   ├── config.py        # Configuration management
+│   ├── logging.py       # Structured logging setup
+│   ├── debug.py         # Debug utilities and metrics
+│   ├── db_utils.py      # Database utilities
+│   ├── http_config.py   # Centralized HTTP/SSL configuration
+│   ├── cache.py         # Caching mechanisms
+│   ├── rate_limiter.py  # Rate limiting
+│   ├── retry.py         # Retry logic with exponential backoff
+│   └── __init__.py
+├── main.py              # FastAPI application entry point
+├── config.py            # FastAPI configuration
+└── database.py          # FastAPI database service
+
+backend/                 # Legacy Node.js backend (deprecated)
+├── package.json         # Removed - migrated to Python
+├── src/                 # Removed - migrated to Python
+└── .env.example         # Updated for FastAPI
+
+frontend/                # React/Vite frontend application
+├── src/
+├── package.json
+├── vite.config.ts
+└── ...
 
 tests/
 ├── contract/           # Contract tests for CLI interfaces

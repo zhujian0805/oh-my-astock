@@ -15,18 +15,24 @@ let renderEndTime = 0;
  * Get optimized ECharts configuration for historical price data
  * Optimized for large datasets (250-750 points) with canvas rendering
  */
-export function getChartOption(chartData: ChartData | null, isMobile: boolean = false): EChartsOption {
+export function getChartOption(chartData: ChartData | null, isMobile: boolean = false, isDarkMode: boolean = false): EChartsOption {
   if (!chartData || chartData.dates.length === 0) {
-    return getEmptyChartOption();
+    return getEmptyChartOption(isDarkMode);
   }
 
   // Data validation
   const isLargeDataset = chartData.dates.length > 500;
 
+  // Colors based on theme
+  const textColor = isDarkMode ? '#e5e7eb' : '#374151'; // gray-200 : gray-700
+  const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
+  const lineColor = '#1a73e8';
+
   // Calculate optimal sampling interval for very large datasets
   const samplingInterval = isLargeDataset ? Math.max(1, Math.floor(chartData.dates.length / 500)) : 1;
 
   const baseOption: EChartsOption = {
+    backgroundColor: 'transparent',
     responsive: true,
     maintainAspectRatio: true,
     animation: false,
@@ -34,13 +40,16 @@ export function getChartOption(chartData: ChartData | null, isMobile: boolean = 
     sampling: isLargeDataset ? 'lttb' : undefined,
     tooltip: {
       trigger: 'axis',
-      axisPointer: { type: 'line' },
+      backgroundColor: isDarkMode ? 'rgba(31, 41, 55, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+      borderColor: isDarkMode ? '#374151' : '#e5e7eb',
+      textStyle: { color: textColor },
+      axisPointer: { type: 'line', lineStyle: { color: isDarkMode ? '#9ca3af' : '#6b7280' } },
       formatter: (params: any) => {
         if (!Array.isArray(params) || params.length === 0) return '';
         const param = params[0];
         return `<div class="text-sm">
           <div class="font-semibold">${param.axisValue}</div>
-          <div class="text-blue-600">Close: ¥${param.value.toFixed(2)}</div>
+          <div style="color: ${lineColor}">Close: ¥${param.value.toFixed(2)}</div>
         </div>`;
       },
     },
@@ -56,10 +65,13 @@ export function getChartOption(chartData: ChartData | null, isMobile: boolean = 
       boundaryGap: false,
       data: chartData.dates,
       splitLine: { show: false },
+      axisLine: { lineStyle: { color: textColor } },
       axisLabel: {
+        color: textColor,
         interval: isMobile ? Math.floor(chartData.dates.length / 4) : (isLargeDataset ? Math.floor(chartData.dates.length / 10) : 'auto'),
         rotate: isMobile ? 45 : 0,
         fontSize: isMobile ? 10 : 12,
+        fontFamily: 'Roboto, sans-serif',
       },
     },
     yAxis: {
@@ -67,7 +79,10 @@ export function getChartOption(chartData: ChartData | null, isMobile: boolean = 
       name: '价格 (¥)',
       nameLocation: 'middle',
       nameGap: isMobile ? 30 : 50,
-      splitLine: { lineStyle: { color: 'rgba(0, 0, 0, 0.05)' } },
+      splitLine: { lineStyle: { color: gridColor } },
+      axisLine: { show: false }, // ECharts yAxis line is hidden by default in many themes, but explicit here
+      axisLabel: { color: textColor, fontFamily: 'Roboto, sans-serif' },
+      nameTextStyle: { color: textColor }
     },
     series: [
       {
@@ -77,8 +92,8 @@ export function getChartOption(chartData: ChartData | null, isMobile: boolean = 
         smooth: !isLargeDataset,
         symbol: 'none',
         symbolSize: 0,
-        lineStyle: { color: '#3b82f6', width: isMobile ? 1.5 : 2 },
-        areaStyle: { color: 'rgba(59, 130, 246, 0.1)' },
+        lineStyle: { color: lineColor, width: isMobile ? 1.5 : 2 },
+        areaStyle: { color: 'rgba(26, 115, 232, 0.1)' },
         // Optimization: use no progressive rendering, rely on canvas for performance
         progressive: isLargeDataset ? 0 : undefined,
       },
@@ -91,12 +106,15 @@ export function getChartOption(chartData: ChartData | null, isMobile: boolean = 
 /**
  * Get empty state chart option
  */
-function getEmptyChartOption(): EChartsOption {
+function getEmptyChartOption(isDarkMode: boolean = false): EChartsOption {
   return {
     title: {
       text: 'No Data Available',
       left: 'center',
       top: 'center',
+      textStyle: {
+        color: isDarkMode ? '#9ca3af' : '#6b7280'
+      }
     },
     grid: { top: 40, right: 20, bottom: 40, left: 60 },
     xAxis: { type: 'category' },
@@ -120,13 +138,17 @@ export function transformPriceData(prices: HistoricalPrice[]): ChartData {
     }
   });
 
+  // Reverse arrays to show data in ascending order (past -> future)
+  dates.reverse();
+  closePrices.reverse();
+
   return { dates, closePrices };
 }
 
 /**
  * Initialize ECharts instance with canvas renderer for performance
  */
-export function initChart(domElement: HTMLElement, option: EChartsOption): ECharts.ECharts {
+export function initChart(domElement: HTMLElement, option: EChartsOption): ECharts {
   const echarts = (window as any).echarts;
   if (!echarts) {
     throw new Error('ECharts library not loaded');
@@ -144,7 +166,7 @@ export function initChart(domElement: HTMLElement, option: EChartsOption): EChar
 /**
  * Dispose ECharts instance on unmount
  */
-export function disposeChart(chart: ECharts.ECharts | null): void {
+export function disposeChart(chart: ECharts | null): void {
   if (chart) {
     chart.dispose();
   }

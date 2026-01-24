@@ -57,35 +57,37 @@ const StockSelector: React.FC<StockSelectorProps> = ({
   }
 
   return (
-    <div className="p-6">
+    <div className="">
       <div className="relative">
         {/* Stock Selector Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-4 py-3 text-left bg-white border border-gray-300 rounded-lg hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-1.5 text-left bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg focus:outline-none transition-colors group"
         >
           <div className="flex justify-between items-center">
             <div>
-              <p className="text-sm text-gray-500">Selected Stock</p>
-              <p className="text-lg font-semibold">
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide">Selected Stock</p>
+              <p className="text-sm font-normal text-gray-900 dark:text-white mt-0">
                 {selectedStock ? `${selectedStock.code} - ${selectedStock.name}` : 'Select a stock'}
               </p>
             </div>
-            <svg
-              className={`w-5 h-5 text-gray-400 transition-transform ${
-                isOpen ? 'rotate-180' : ''
-              }`}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 14l-7 7m0 0l-7-7m7 7V3"
-              />
-            </svg>
+            <div className="bg-white dark:bg-gray-600 p-1 rounded-full shadow-sm text-gray-500 dark:text-gray-300 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+              <svg
+                className={`w-4 h-4 transition-transform ${
+                  isOpen ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </div>
           </div>
         </button>
 
@@ -99,23 +101,23 @@ const StockSelector: React.FC<StockSelectorProps> = ({
             />
 
             {/* Dropdown List */}
-            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-40 max-h-96 overflow-hidden flex flex-col">
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-100 dark:border-gray-700 z-40 max-h-96 overflow-hidden flex flex-col">
               {/* Search Input */}
-              <div className="p-3 border-b border-gray-200 flex-shrink-0">
+              <div className="p-3 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
                 <input
                   type="text"
                   placeholder="Search by code or name..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-gray-50 dark:bg-gray-700 border-none rounded-md focus:ring-2 focus:ring-primary-500 text-sm text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                   autoFocus
                 />
               </div>
 
               {/* Stock List */}
-              <div className="overflow-y-auto flex-1">
+              <div className="overflow-y-auto flex-1 p-1">
                 {filteredStocks.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                     <p>No stocks found</p>
                   </div>
                 ) : (
@@ -123,18 +125,20 @@ const StockSelector: React.FC<StockSelectorProps> = ({
                     <button
                       key={stock.code}
                       onClick={() => handleSelect(stock)}
-                      className={`w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 transition-colors ${
-                        selectedStock?.code === stock.code ? 'bg-blue-100' : ''
+                      className={`w-full px-4 py-3 text-left rounded-md transition-colors ${
+                        selectedStock?.code === stock.code 
+                          ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400' 
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
                       }`}
                     >
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <div>
-                          <p className="font-semibold text-gray-900">{stock.code}</p>
-                          <p className="text-sm text-gray-600">{stock.name}</p>
+                          <p className="font-medium text-sm">{stock.code}</p>
+                          <p className="text-xs opacity-80">{stock.name}</p>
                         </div>
                         {selectedStock?.code === stock.code && (
                           <svg
-                            className="w-5 h-5 text-blue-600"
+                            className="w-5 h-5 text-primary-600 dark:text-primary-400"
                             fill="currentColor"
                             viewBox="0 0 20 20"
                           >

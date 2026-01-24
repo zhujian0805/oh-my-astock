@@ -10,6 +10,7 @@ import { getChartOption, disposeChart, startRenderTimer, endRenderTimer, getChar
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import EmptyState from '../common/EmptyState';
+import { useTheme } from '../../contexts/ThemeContext';
 
 /**
  * Dynamic import for ECharts to reduce initial bundle
@@ -18,7 +19,7 @@ let echarts: any = null;
 
 const loadECharts = async () => {
   if (!echarts) {
-    echarts = (await import('echarts')).default;
+    echarts = await import('echarts');
   }
   return echarts;
 };
@@ -33,11 +34,25 @@ const StockChart: React.FC<StockChartProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const { theme } = useTheme();
+
+  // Log chart data changes
+  React.useEffect(() => {
+    console.log('[StockChart] Chart data updated:', {
+      stockCode,
+      hasData: !!chartData,
+      dataPoints: chartData?.dates?.length || 0,
+      isLoading,
+      hasError: !!error,
+      theme
+    });
+  }, [chartData, stockCode, isLoading, error, theme]);
 
   // Initialize and update chart
   useEffect(() => {
     const initChart = async () => {
-      if (!containerRef.current || !chartData) {
+      // Only skip if container doesn't exist
+      if (!containerRef.current) {
         return;
       }
 
@@ -45,30 +60,40 @@ const StockChart: React.FC<StockChartProps> = ({
         startRenderTimer();
         const ec = await loadECharts();
 
-        // Dispose old chart
-        if (chartRef.current) {
-          disposeChart(chartRef.current);
+        // Initialize chart if it doesn't exist
+        if (!chartRef.current) {
+          // Detect mobile view - recalculate on every render to handle resize
+          const isMobile = window.innerWidth < 768;
+
+          // Initialize chart
+          chartRef.current = ec.init(containerRef.current, null, {
+            renderer: 'canvas',
+            useDirtyRect: true,
+            devicePixelRatio: window.devicePixelRatio || 1,
+          });
         }
 
-        // Detect mobile view - recalculate on every render to handle resize
         const isMobile = window.innerWidth < 768;
-
-        // Initialize chart
-        chartRef.current = ec.init(containerRef.current, null, {
-          renderer: 'canvas',
-          useDirtyRect: true,
-          devicePixelRatio: window.devicePixelRatio || 1,
-        });
+        const isDarkMode = theme === 'dark';
 
         // Set chart option with responsive settings
-        const option = getChartOption(chartData, isMobile);
-        chartRef.current.setOption(option);
+        const option = getChartOption(chartData, isMobile, isDarkMode);
+        chartRef.current.setOption(option, true); // Use notMerge=true to fully replace data
 
         // Track performance metrics
-        endRenderTimer(chartData.dates.length);
+        if (chartData) {
+          endRenderTimer(chartData.dates.length);
+        }
+
+        // Log successful render
+        if (chartData) {
+          console.log(`[StockChart] Chart rendered successfully for ${stockCode} with ${chartData.dates.length} data points`);
+        } else {
+          console.log(`[StockChart] Chart initialized for ${stockCode} (waiting for data)`);
+        }
 
         if (import.meta.env.VITE_DEBUG) {
-          console.log(`[Chart] Rendered ${chartData.dates.length} data points for ${stockCode}`);
+          console.log(`[Chart] Rendered ${chartData?.dates?.length || 0} data points for ${stockCode}`);
         }
       } catch (err) {
         console.error('Failed to initialize chart:', err);
@@ -101,7 +126,7 @@ const StockChart: React.FC<StockChartProps> = ({
       window.removeEventListener('resize', handleResize);
       clearTimeout(resizeTimeout);
     };
-  }, [chartData, onError, stockCode]);
+  }, [chartData, onError, stockCode, theme]); // Added theme dependency
 
   // Cleanup on unmount
   useEffect(() => {
@@ -120,7 +145,7 @@ const StockChart: React.FC<StockChartProps> = ({
     return <ErrorMessage error={error} />;
   }
 
-  if (isLoading) {
+  if (isLoading && !chartData) {
     return <LoadingSpinner message="Loading chart data..." />;
   }
 
@@ -137,60 +162,23 @@ const StockChart: React.FC<StockChartProps> = ({
     );
   }
 
-  // Memoize chart statistics to avoid recalculation on every render
-  const stats = useMemo(() => getChartStatistics(chartData), [chartData]);
-
   return (
-    <div className="p-6 h-full flex flex-col">
+    <div className="p-2 h-full flex flex-col">
       {/* Header */}
-      <div className="mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">
-          {stockCode} - Price History
+      <div className="mb-2 flex items-baseline justify-between">
+        <h2 className="text-lg font-normal text-gray-900 dark:text-white">
+          {stockCode} <span className="text-gray-500 dark:text-gray-400 text-sm font-light ml-2">Price History</span>
         </h2>
-        <p className="text-sm text-gray-600">
-          {chartData.dates.length} trading days
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          Last {chartData.dates.length} days
         </p>
       </div>
 
       {/* Chart Container */}
       <div
         ref={containerRef}
-        className="flex-1 min-h-0 bg-white rounded-lg border border-gray-200"
+        className="flex-1 min-h-0 w-full"
       />
-
-      {/* Footer Stats - Using memoized calculations */}
-      {chartData.closePrices.length > 0 && (
-        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-600">High</p>
-            <p className="text-lg font-semibold text-gray-900">
-              ¥{stats.high.toFixed(2)}
-            </p>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-600">Low</p>
-            <p className="text-lg font-semibold text-gray-900">
-              ¥{stats.low.toFixed(2)}
-            </p>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-600">Latest</p>
-            <p className="text-lg font-semibold text-gray-900">
-              ¥{stats.latest.toFixed(2)}
-            </p>
-          </div>
-          <div className="bg-gray-50 p-3 rounded-lg">
-            <p className="text-xs text-gray-600">Change</p>
-            <p className={`text-lg font-semibold ${
-              stats.changePercent >= 0
-                ? 'text-green-600'
-                : 'text-red-600'
-            }`}>
-              {stats.changePercent.toFixed(2)}%
-            </p>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

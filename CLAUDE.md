@@ -10,6 +10,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-20
 - **pandas** (data processing)
 - **pytest >= 7.0.0** (testing framework)
 - **ruff** (linting and formatting)
+- Python 3.10+ (matching existing codebase requirements) + FastAPI 0.109+, Uvicorn 0.27+, Pydantic 2.5+ (see research.md for rationale) (003-backend-api)
+- DuckDB >= 0.8.0 (existing database, read-only access for this feature) (003-backend-api)
 
 ## Project Structure
 
@@ -60,10 +62,9 @@ stocklib fetch-stocks --default-db # Fetch stock data
 - **Testing:** Write contract tests for all new features
 
 ## Recent Changes
+- 003-backend-api: Added Python 3.10+ (matching existing codebase requirements) + FastAPI 0.109+, Uvicorn 0.27+, Pydantic 2.5+ (see research.md for rationale)
 - 2026-01-20: Updated to Python 3.10+ requirement (match statement usage)
 - 2026-01-20: Corrected project structure documentation
-- 2026-01-20: Fixed command examples (pytest runs from root, not src/)
-- 001-duckdb-stock-setup: Initial setup with DuckDB + akshare integration
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

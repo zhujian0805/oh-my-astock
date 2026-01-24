@@ -156,6 +156,62 @@ class DatabaseService:
         logger.info(f"Retrieved {len(stocks)} stocks from database")
         return stocks
 
+    def get_stock_by_code(self, code: str) -> Optional[Stock]:
+        """Get a single stock by code.
+
+        Args:
+            code: Stock code to search for
+
+        Returns:
+            Stock object if found, None otherwise
+        """
+        conn = self.db_connection.connect()
+        result = conn.execute("SELECT code, name, metadata FROM stock_name_code WHERE code = ?", [code])
+        row = result.fetchone()
+
+        if row:
+            metadata = json.loads(row[2]) if row[2] else None
+            return Stock(code=row[0], name=row[1], metadata=metadata)
+        return None
+
+    def get_historical_data(self, code: str) -> List[dict]:
+        """Get historical data for a stock.
+
+        Args:
+            code: Stock code to get historical data for
+
+        Returns:
+            List of historical data records as dictionaries
+        """
+        conn = self.db_connection.connect()
+        result = conn.execute("""
+            SELECT date, open_price, close_price, high_price, low_price, volume,
+                   turnover, amplitude, price_change_rate, price_change, turnover_rate
+            FROM stock_historical_data
+            WHERE stock_code = ?
+            ORDER BY date ASC
+        """, [code])
+
+        records = []
+        for row in result.fetchall():
+            record = {
+                'date': row[0],
+                'open_price': row[1],
+                'close_price': row[2],
+                'high_price': row[3],
+                'low_price': row[4],
+                'volume': row[5],
+                'turnover': row[6],
+                'amplitude': row[7],
+                'price_change_rate': row[8],
+                'price_change': row[9],
+                'turnover_rate': row[10]
+            }
+            records.append(record)
+
+        logger.info(f"Retrieved {len(records)} historical records for {code}")
+        return records
+
     def list_tables(self) -> List[str]:
         """List all tables in the database.
 

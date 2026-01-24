@@ -1,0 +1,61 @@
+# Node.js / npm
+node_modules/
+package-lock.json
+npm-debug.log
+yarn-error.log
+.npm
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+coverage/
+
+# Development
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Testing
+coverage/
+.nyc_output/
+
+# IDE specific
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+
+# Vite specific
+.vite/
+dist/
