@@ -4,7 +4,7 @@
  * Optimized for large datasets with responsive design and performance tracking
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useCallback } from 'react';
 import { StockChartProps } from '../../types';
 import { getChartOption, disposeChart, startRenderTimer, endRenderTimer } from '../../utils/charts';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -33,10 +33,102 @@ const StockChart: React.FC<StockChartProps> = ({
   startDate,
   endDate,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<any>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const isInitializedRef = useRef(false);
+  const isReadyRef = useRef(false);
   const { theme } = useTheme();
+
+  // Track if we should render the container
+  const hasChartData = !!(chartData && chartData.dates.length > 0);
+
+  // Callback ref - called when DOM is attached
+  const containerRef = useCallback((element: HTMLDivElement | null) => {
+    if (!element || isInitializedRef.current) {
+      return;
+    }
+
+    console.log('[StockChart] Container ref callback - element attached');
+    isInitializedRef.current = true;
+
+    const initChart = async () => {
+      // Wait for DOM to settle
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      if (!element) {
+        console.error('[StockChart] Element lost during init');
+        isInitializedRef.current = false;
+        return;
+      }
+
+      // Check dimensions
+      const rect = element.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) {
+        console.warn('[StockChart] Container has zero dimensions:', {
+          width: rect.width,
+          height: rect.height,
+          offsetWidth: element.offsetWidth,
+          offsetHeight: element.offsetHeight
+        });
+        isInitializedRef.current = false;
+        setTimeout(() => initChart(), 100);
+        return;
+      }
+
+      try {
+        console.log('[StockChart] Loading ECharts...');
+        const ec = await loadECharts();
+        if (!element) {
+          isInitializedRef.current = false;
+          return;
+        }
+
+        console.log('[StockChart] Initializing ECharts instance...');
+        chartRef.current = ec.init(element, null, {
+          renderer: 'canvas',
+          useDirtyRect: true,
+          devicePixelRatio: window.devicePixelRatio || 1,
+        });
+        
+        isReadyRef.current = true;
+        console.log('[StockChart] Chart ready for data!', {
+          hasChart: !!chartRef.current,
+          elementDimensions: {
+            width: element.offsetWidth,
+            height: element.offsetHeight
+          }
+        });
+
+        // Trigger initial data update if we already have data
+        if (hasChartData) {
+          console.log('[StockChart] Data already available, updating chart...');
+          const isMobile = window.innerWidth < 768;
+          const isDarkMode = theme === 'dark';
+          const option = getChartOption(chartData, isMobile, isDarkMode);
+          chartRef.current.setOption(option, true);
+          
+          setTimeout(() => {
+            if (chartRef.current) {
+              chartRef.current.resize();
+            }
+          }, 50);
+        }
+      } catch (err) {
+        console.error('[StockChart] Failed to initialize:', err);
+        isInitializedRef.current = false;
+        isReadyRef.current = false;
+        if (onError && err instanceof Error) {
+          onError({
+            code: 'CHART_INIT_ERROR',
+            message: 'Failed to initialize chart',
+            details: { error: err.message },
+          });
+        }
+      }
+    };
+
+    initChart();
+  }, [hasChartData, chartData, theme, onError]);
 
   // Log chart data changes
   React.useEffect(() => {
@@ -50,96 +142,8 @@ const StockChart: React.FC<StockChartProps> = ({
     });
   }, [chartData, stockCode, isLoading, error, theme]);
 
-  // Initialize chart instance once
+  // Set up resize listener
   useEffect(() => {
-    const initChart = async () => {
-      console.log('[StockChart] Attempting to initialize chart...', {
-        containerExists: !!containerRef.current,
-        chartAlreadyExists: !!chartRef.current
-      });
-
-      // Wait longer for DOM to be fully ready
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Only skip if container doesn't exist
-      if (!containerRef.current) {
-        console.error('[StockChart] Container ref is null, cannot initialize chart');
-        return;
-      }
-
-      // Check if container has dimensions
-      const rect = containerRef.current.getBoundingClientRect();
-      console.log('[StockChart] Container dimensions:', {
-        width: rect.width,
-        height: rect.height,
-        offsetWidth: containerRef.current.offsetWidth,
-        offsetHeight: containerRef.current.offsetHeight
-      });
-
-      if (rect.width === 0 || rect.height === 0) {
-        console.warn('[StockChart] Container has zero dimensions, retrying in 100ms');
-        setTimeout(initChart, 100);
-        return;
-      }
-
-      try {
-        startRenderTimer();
-        console.log('[StockChart] Loading ECharts library...');
-        const ec = await loadECharts();
-        console.log('[StockChart] ECharts loaded successfully');
-
-        // Initialize chart if it doesn't exist
-        if (!chartRef.current) {
-          // Detect mobile view - recalculate on every render to handle resize
-          const isMobile = window.innerWidth < 768;
-
-          // Initialize chart
-          chartRef.current = ec.init(containerRef.current, null, {
-            renderer: 'canvas',
-            useDirtyRect: true,
-            devicePixelRatio: window.devicePixelRatio || 1,
-          });
-        }
-
-        // Log successful initialization
-        console.log(`[StockChart] Chart initialized for ${stockCode}`, {
-          chartInstance: !!chartRef.current,
-          containerElement: !!containerRef.current,
-          containerDimensions: containerRef.current ? {
-            width: containerRef.current.offsetWidth,
-            height: containerRef.current.offsetHeight
-          } : null
-        });
-
-        // Ensure chart is properly sized after initialization
-        setTimeout(() => {
-          if (chartRef.current) {
-            chartRef.current.resize();
-            console.log('[StockChart] Chart resized after initialization');
-          }
-        }, 100);
-
-        if (import.meta.env.VITE_DEBUG) {
-          console.log(`[Chart] Initialized chart instance for ${stockCode}`);
-        }
-      } catch (err) {
-        console.error('[StockChart] Failed to initialize chart:', err, {
-          errorMessage: err instanceof Error ? err.message : String(err),
-          errorStack: err instanceof Error ? err.stack : undefined
-        });
-        if (onError && err instanceof Error) {
-          onError({
-            code: 'CHART_INIT_ERROR',
-            message: 'Failed to render chart',
-            details: { error: err.message },
-          });
-        }
-      }
-    };
-
-    initChart();
-
-    // Handle window resize with debounce
     let resizeTimeout: NodeJS.Timeout;
     const handleResize = () => {
       clearTimeout(resizeTimeout);
@@ -147,79 +151,61 @@ const StockChart: React.FC<StockChartProps> = ({
         if (chartRef.current) {
           chartRef.current.resize();
         }
-      }, 300); // 300ms debounce
+      }, 300);
     };
 
     window.addEventListener('resize', handleResize);
-
     return () => {
       window.removeEventListener('resize', handleResize);
       clearTimeout(resizeTimeout);
     };
-  }, []); // Only run once on mount
+  }, []);
 
   // Update chart data when data or theme changes
   useEffect(() => {
-    console.log('[StockChart] Data update effect triggered:', {
+    console.log('[StockChart] Data effect - checking if we should update:', {
+      isReady: isReadyRef.current,
       hasChartRef: !!chartRef.current,
-      hasChartData: !!chartData,
-      stockCode,
-      theme,
-      chartDataKeys: chartData ? Object.keys(chartData) : [],
-      datesLength: chartData?.dates?.length || 0,
-      closePricesLength: chartData?.closePrices?.length || 0
+      hasChartData,
+      dataPoints: chartData?.dates?.length || 0
     });
 
-    if (!chartRef.current) {
-      console.log('[StockChart] Chart not initialized yet, skipping update');
-      return; // Chart not initialized yet
+    // Don't do anything if chart isn't ready or we don't have data
+    if (!isReadyRef.current || !chartRef.current || !hasChartData) {
+      console.log('[StockChart] Skipping update: ready?', isReadyRef.current, 'has chart?', !!chartRef.current, 'has data?', hasChartData);
+      return;
     }
 
     try {
       const isMobile = window.innerWidth < 768;
       const isDarkMode = theme === 'dark';
 
-      // Set chart option with responsive settings
+      startRenderTimer();
       const option = getChartOption(chartData, isMobile, isDarkMode);
-      console.log('[StockChart] Generated chart option:', {
-        stockCode,
-        hasData: !!chartData,
+      
+      console.log('[StockChart] Setting chart option:', {
         dataPoints: chartData?.dates?.length || 0,
         isMobile,
         isDarkMode,
-        optionSeries: Array.isArray(option.series) ? option.series.length : (option.series ? 1 : 0),
-        optionXAxis: !!option.xAxis,
-        optionYAxis: !!option.yAxis
+        seriesCount: Array.isArray(option.series) ? option.series.length : 0
       });
 
-      chartRef.current.setOption(option, true); // Use notMerge=true to fully replace data
-      console.log('[StockChart] setOption called successfully');
+      chartRef.current.setOption(option, true);
+      console.log('[StockChart] ✓ Chart option set successfully');
 
-      // Force resize after setting option to ensure proper rendering
+      // Force resize
       setTimeout(() => {
         if (chartRef.current) {
           chartRef.current.resize();
-          console.log('[StockChart] Chart resized after setOption');
+          console.log('[StockChart] ✓ Chart resized');
         }
       }, 50);
 
-      // Track performance metrics
       if (chartData) {
         endRenderTimer(chartData.dates.length);
       }
-
-      // Log successful render
-      if (chartData) {
-        console.log(`[StockChart] Chart updated successfully for ${stockCode} with ${chartData.dates.length} data points`);
-      } else {
-        console.log(`[StockChart] Chart updated for ${stockCode} (waiting for data)`);
-      }
-
-      if (import.meta.env.VITE_DEBUG) {
-        console.log(`[Chart] Updated chart with ${chartData?.dates?.length || 0} data points for ${stockCode}`);
-      }
     } catch (err) {
-      console.error('Failed to update chart:', err);
+      console.error('[StockChart] Error updating chart:', err);
       if (onError && err instanceof Error) {
         onError({
           code: 'CHART_UPDATE_ERROR',
@@ -228,7 +214,7 @@ const StockChart: React.FC<StockChartProps> = ({
         });
       }
     }
-  }, [chartData, stockCode, theme, onError]); // Update when data or theme changes
+  }, [chartData, theme, onError, hasChartData]); // Update when data or theme changes
 
   // Cleanup on unmount
   useEffect(() => {
@@ -237,15 +223,31 @@ const StockChart: React.FC<StockChartProps> = ({
         disposeChart(chartRef.current);
         chartRef.current = null;
       }
+      isInitializedRef.current = false;
+      isReadyRef.current = false;
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       }
     };
   }, []);
 
+  // Reset flags when stock code changes
+  useEffect(() => {
+    isInitializedRef.current = false;
+    isReadyRef.current = false;
+    if (chartRef.current) {
+      disposeChart(chartRef.current);
+      chartRef.current = null;
+    }
+  }, [stockCode]);
+
   if (error) {
     return <ErrorMessage error={error} />;
   }
+
+  // Determine what to show
+  const showLoading = isLoading && !chartData;
+  const showEmpty = !isLoading && !hasChartData;
 
   return (
     <div className="p-2 h-full flex flex-col">
@@ -259,33 +261,31 @@ const StockChart: React.FC<StockChartProps> = ({
         </p>
       </div>
 
-      {/* Chart Container - Always render so ref attaches */}
-      <div
-        ref={containerRef}
-        className="flex-1 w-full relative"
-        style={{
-          minHeight: '300px'
-        }}
-      >
-        {isLoading && !chartData && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <LoadingSpinner message="Loading chart data..." />
-          </div>
-        )}
-        
-        {!isLoading && (!chartData || chartData.dates.length === 0) && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <EmptyState
-              title="No data available"
-              description={
-                stockCode
-                  ? `No historical data available for stock ${stockCode}`
-                  : 'Select a stock to view price history'
-              }
-            />
-          </div>
-        )}
-      </div>
+      {/* Chart Container - Keep DOM stable by not toggling children */}
+      {showLoading ? (
+        <div className="flex-1 w-full flex items-center justify-center">
+          <LoadingSpinner message="Loading chart data..." />
+        </div>
+      ) : showEmpty ? (
+        <div className="flex-1 w-full flex items-center justify-center">
+          <EmptyState
+            title="No data available"
+            description={
+              stockCode
+                ? `No historical data available for stock ${stockCode}`
+                : 'Select a stock to view price history'
+            }
+          />
+        </div>
+      ) : (
+        <div
+          ref={containerRef}
+          className="flex-1 w-full"
+          style={{
+            minHeight: '300px'
+          }}
+        />
+      )}
     </div>
   );
 };
