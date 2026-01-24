@@ -20,7 +20,7 @@ export const menuItems: MenuItem[] = [
   },
   {
     id: 'market',
-    label: '市场',
+    label: '股票数据',
     children: [
       {
         id: 'market-index',

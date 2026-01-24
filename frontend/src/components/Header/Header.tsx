@@ -45,13 +45,21 @@ const NavMenuItem: React.FC<{
         onMouseLeave={() => setIsOpen(false)}
       >
         <button
-          className={`px-3 py-2 rounded-md transition-colors font-medium ${
-            isActive 
-              ? 'text-blue-600 dark:text-blue-400' 
+          className={`px-3 py-2 rounded-md transition-colors font-medium flex items-center gap-1 ${
+            isActive
+              ? 'text-blue-600 dark:text-blue-400'
               : 'text-gray-700 hover:text-blue-600 dark:text-gray-200 dark:hover:text-blue-400'
           }`}
         >
           {item.label}
+          <svg
+            className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
         </button>
         {isOpen && (
           <div className="absolute top-[80%] left-0 w-48 bg-white dark:bg-gray-800 shadow-xl rounded-md py-1 border border-gray-100 dark:border-gray-700">

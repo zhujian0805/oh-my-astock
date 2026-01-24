@@ -257,7 +257,7 @@ const StockChart: React.FC<StockChartProps> = ({
           {stockCode} <span className="text-gray-500 dark:text-gray-400 text-sm font-light ml-2">Price History</span>
         </h2>
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          {startDate && endDate ? `${startDate} to ${endDate}` : 'Last 6 months'}
+          {startDate && endDate ? `${startDate} to ${endDate}` : 'All available data'}
         </p>
       </div>
 

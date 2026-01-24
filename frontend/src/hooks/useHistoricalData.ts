@@ -17,10 +17,10 @@ export function useHistoricalData(
   startDate?: string,
   endDate?: string
 ): UseHistoricalDataReturn {
-  // Calculate default dates if not provided (last 6 months)
+  // Calculate default dates if not provided (all available data)
   const defaultStartDate = startDate || (() => {
     const date = new Date();
-    date.setMonth(date.getMonth() - 6);
+    date.setFullYear(date.getFullYear() - 10); // 10 years ago for all data
     return formatDate(date);
   })();
 
