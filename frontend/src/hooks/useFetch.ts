@@ -83,7 +83,15 @@ export function useFetch<T>(
       return;
     }
 
-    setState((prev) => ({ ...prev, loading: true }));
+    // Check cache immediately to prevent flash of loading if data exists
+    const cached = cacheStore.get(url);
+    if (cached && Date.now() < cached.expiry) {
+      // Let the async fetchData handle the state update to be consistent
+      // But we could optimistically set it here if we wanted
+    } else {
+      // Clear previous data and set loading state for new request
+      setState({ data: null, loading: true, error: null });
+    }
 
     (async () => {
       await fetchData();

@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { useFetch } from './useFetch';
 import { HistoricalPrice, UseHistoricalDataReturn, ChartData } from '../types';
 import { transformPriceData } from '../utils/charts';
+import { formatDate } from '../utils/formatters';
 
 /**
  * Custom hook to fetch and manage historical price data
@@ -16,13 +17,22 @@ export function useHistoricalData(
   startDate?: string,
   endDate?: string
 ): UseHistoricalDataReturn {
-  // Build API URL with optional date parameters
+  // Calculate default dates if not provided (last 6 months)
+  const defaultStartDate = startDate || (() => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - 6);
+    return formatDate(date);
+  })();
+
+  const defaultEndDate = endDate || formatDate(new Date());
+
+  // Build API URL with date parameters (always include dates now)
   const params = new URLSearchParams();
-  if (startDate) params.append('start_date', startDate);
-  if (endDate) params.append('end_date', endDate);
+  params.append('start_date', defaultStartDate);
+  params.append('end_date', defaultEndDate);
 
   const queryString = params.toString();
-  const url = stockCode ? `/stocks/${stockCode}/historical${queryString ? '?' + queryString : ''}` : '';
+  const url = stockCode ? `/stocks/${stockCode}/historical?${queryString}` : '';
 
   // Fetch data (skips fetch if no stockCode)
   const { data: response, loading, error, refetch } = useFetch(url, {

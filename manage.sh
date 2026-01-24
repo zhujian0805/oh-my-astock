@@ -190,6 +190,34 @@ start_backend() {
     cd "$SCRIPT_DIR"
 }
 
+# Build frontend
+build_frontend() {
+    if [ ! -d "$FRONTEND_DIR" ]; then
+        print_error "Frontend directory not found at: $FRONTEND_DIR"
+        return 1
+    fi
+
+    print_info "Building frontend..."
+    cd "$FRONTEND_DIR"
+
+    # Check if node_modules exists
+    if [ ! -d "node_modules" ]; then
+        print_warning "Frontend dependencies not installed. Installing now..."
+        npm install
+    fi
+
+    # Build the frontend
+    if npm run build; then
+        print_success "Frontend built successfully"
+    else
+        print_error "Frontend build failed"
+        cd "$SCRIPT_DIR"
+        return 1
+    fi
+
+    cd "$SCRIPT_DIR"
+}
+
 # Start frontend
 start_frontend() {
     if is_running "$FRONTEND_PID_FILE"; then
@@ -418,6 +446,7 @@ restart_service() {
         frontend)
             stop_frontend
             sleep 1
+            build_frontend
             start_frontend
             ;;
         all)
@@ -425,6 +454,7 @@ restart_service() {
             stop_frontend
             sleep 1
             start_backend
+            build_frontend
             start_frontend
             ;;
         *)
@@ -484,7 +514,8 @@ Usage: $0 <command> [options]
 Commands:
     start [service]          Start services (backend, frontend, or all)
     stop [service]           Stop services (backend, frontend, or all)
-    restart [service]        Restart services (backend, frontend, or all)
+    restart [service]        Restart services (backend, frontend, or all) - rebuilds frontend
+    build [service]          Build services (frontend or all)
     status                   Show status of all services
     logs <service>           Show logs for a service (backend or frontend)
     follow <service>         Follow logs for a service (backend or frontend)
@@ -498,7 +529,9 @@ Examples:
     $0 start all             Start both backend and frontend
     $0 start backend         Start only backend
     $0 stop all              Stop both services
-    $0 restart frontend      Restart frontend
+    $0 restart frontend      Restart frontend with rebuild
+    $0 restart all           Restart all services with frontend rebuild
+    $0 build frontend        Build frontend only
     $0 status                Show service status
     $0 logs backend          Show backend logs
     $0 follow frontend       Follow frontend logs in real-time
@@ -589,6 +622,23 @@ main() {
             ;;
         test)
             run_tests "${2:-all}"
+            ;;
+        build)
+            case "${2:-all}" in
+                frontend)
+                    print_header "Building Frontend"
+                    build_frontend
+                    ;;
+                all)
+                    print_header "Building All Services"
+                    build_frontend
+                    ;;
+                *)
+                    print_error "Unknown service: ${2}"
+                    print_info "Usage: $0 build [frontend|all]"
+                    exit 1
+                    ;;
+            esac
             ;;
         install)
             check_dependencies

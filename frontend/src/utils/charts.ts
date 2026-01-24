@@ -89,9 +89,9 @@ export function getChartOption(chartData: ChartData | null, isMobile: boolean = 
         name: '收盘价',
         type: 'line',
         data: chartData.closePrices,
-        smooth: !isLargeDataset,
-        symbol: 'none',
-        symbolSize: 0,
+        smooth: !isLargeDataset && chartData.dates.length > 5, // Don't smooth very small datasets
+        symbol: chartData.dates.length < 20 ? 'circle' : 'none', // Show symbols for small datasets
+        symbolSize: chartData.dates.length < 20 ? 6 : 0,
         lineStyle: { color: lineColor, width: isMobile ? 1.5 : 2 },
         areaStyle: { color: 'rgba(26, 115, 232, 0.1)' },
         // Optimization: use no progressive rendering, rely on canvas for performance

@@ -7,7 +7,19 @@ import { useState, useCallback, useEffect } from 'react';
 import { MenuItem, UseMenuReturn } from '../types';
 
 const MENU_STATE_KEY = 'app:activeMenuId';
-const DEFAULT_MENU_ID = 'stock-prices';
+const DEFAULT_MENU_ID = 'home';
+
+// Helper to find item by ID in a nested structure
+const findItem = (items: MenuItem[], id: string): MenuItem | undefined => {
+  for (const item of items) {
+    if (item.id === id) return item;
+    if (item.children) {
+      const found = findItem(item.children, id);
+      if (found) return found;
+    }
+  }
+  return undefined;
+};
 
 /**
  * Custom hook to manage menu state
@@ -21,15 +33,15 @@ export function useMenu(items: MenuItem[]): UseMenuReturn {
     return sessionStorage.getItem(MENU_STATE_KEY) || DEFAULT_MENU_ID;
   });
 
-  // Validate that active menu ID exists in items
-  const isValidMenuId = items.some((item) => item.id === activeMenuId);
+  // Validate that active menu ID exists in items (recursively)
+  const isValidMenuId = !!findItem(items, activeMenuId);
   const currentActiveId = isValidMenuId ? activeMenuId : DEFAULT_MENU_ID;
 
   // Set active menu and persist to sessionStorage
   const setActiveMenu = useCallback(
     (id: string) => {
       // Validate menu ID exists
-      if (items.some((item) => item.id === id)) {
+      if (findItem(items, id)) {
         setActiveMenuIdState(id);
         sessionStorage.setItem(MENU_STATE_KEY, id);
       }

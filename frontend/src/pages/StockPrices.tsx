@@ -66,7 +66,7 @@ const StockPrices: React.FC = () => {
              <label className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-0.5">开始日期</label>
              <DatePicker
                selected={startDate}
-               onChange={(date) => setStartDate(date)}
+               onChange={(date: Date | null) => setStartDate(date)}
                dateFormat="yyyy-MM-dd"
                className="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
                placeholderText="开始日期"
@@ -76,7 +76,7 @@ const StockPrices: React.FC = () => {
              <label className="text-[10px] text-gray-500 dark:text-gray-400 font-medium uppercase tracking-wide mb-0.5">结束日期</label>
              <DatePicker
                selected={endDate}
-               onChange={(date) => setEndDate(date)}
+               onChange={(date: Date | null) => setEndDate(date)}
                dateFormat="yyyy-MM-dd"
                className="w-full px-2 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
                placeholderText="结束日期"
@@ -90,12 +90,14 @@ const StockPrices: React.FC = () => {
         {selectedStock ? (
           <>
             {/* Chart Section */}
-            <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden min-h-[300px] transition-colors duration-200">
+            <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden min-h-[300px] transition-colors duration-200 flex flex-col">
               <StockChart
                 chartData={chartData}
                 stockCode={selectedStock.code}
                 isLoading={chartLoading}
                 error={chartError}
+                startDate={startDate ? formatDate(startDate) : undefined}
+                endDate={endDate ? formatDate(endDate) : undefined}
               />
             </div>
 

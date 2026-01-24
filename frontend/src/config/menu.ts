@@ -1,10 +1,12 @@
 /**
  * Menu Configuration
- * Defines all sidebar menu items and their associated components
+ * Defines all menu items and their associated components
  */
 
 import { MenuItem } from '../types';
 import StockPrices from '../pages/StockPrices';
+import Home from '../pages/Home';
+import MarketIndex from '../pages/MarketIndex';
 
 /**
  * Available menu items
@@ -12,24 +14,26 @@ import StockPrices from '../pages/StockPrices';
  */
 export const menuItems: MenuItem[] = [
   {
-    id: 'stock-prices',
-    label: '股票价格',
-    icon: '📈',
-    component: StockPrices,
+    id: 'home',
+    label: '首页',
+    component: Home,
   },
-  // Future menu items can be added here:
-  // {
-  //   id: 'stock-comparison',
-  //   label: 'Stock Comparison',
-  //   icon: '⚖️',
-  //   component: StockComparison,
-  // },
-  // {
-  //   id: 'market-analysis',
-  //   label: 'Market Analysis',
-  //   icon: '📊',
-  //   component: MarketAnalysis,
-  // },
+  {
+    id: 'market',
+    label: '市场',
+    children: [
+      {
+        id: 'market-index',
+        label: '大盘',
+        component: MarketIndex,
+      },
+      {
+        id: 'stock-individual',
+        label: '个股',
+        component: StockPrices,
+      },
+    ],
+  },
 ];
 
 export default menuItems;

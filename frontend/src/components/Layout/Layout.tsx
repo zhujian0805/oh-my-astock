@@ -1,25 +1,24 @@
 /**
  * Layout Component
- * Main layout with sidebar and content pane
- * Responsive: stacked on mobile, side-by-side on tablet+
+ * Main layout with header and content pane
  */
 
 import React from 'react';
 import { LayoutProps } from '../../types';
 
-const Layout: React.FC<LayoutProps> = ({ children, sidebar }) => {
+const Layout: React.FC<LayoutProps> = ({ children, header }) => {
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-      {/* Sidebar - Full width on mobile, fixed width on tablet+ */}
-      {sidebar && (
-        <aside className="w-full md:w-56 bg-white dark:bg-gray-800 shadow-[4px_0_24px_rgba(0,0,0,0.02)] dark:border-r dark:border-gray-700 z-10 flex-shrink-0 transition-colors duration-200">
-          {sidebar}
-        </aside>
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+      {/* Header - Fixed at top */}
+      {header && (
+        <div className="flex-shrink-0 w-full z-20">
+          {header}
+        </div>
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="w-full h-full p-2 text-gray-900 dark:text-gray-100">
+      <main className="flex-1 overflow-hidden relative flex flex-col">
+        <div className="w-full h-full p-4 text-gray-900 dark:text-gray-100 overflow-y-auto flex flex-col">
           {children}
         </div>
       </main>

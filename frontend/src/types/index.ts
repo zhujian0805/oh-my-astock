@@ -48,6 +48,7 @@ export interface MenuItem {
   label: string;
   icon?: string;
   component?: React.ComponentType<any>;
+  children?: MenuItem[];
 }
 
 // ============================================================================
@@ -173,6 +174,8 @@ export interface StockChartProps {
   isLoading?: boolean;
   error?: ApiError | null;
   onError?: (error: ApiError) => void;
+  startDate?: string;
+  endDate?: string;
 }
 
 /**
@@ -200,7 +203,7 @@ export interface MenuItemProps {
  */
 export interface LayoutProps {
   children: React.ReactNode;
-  sidebar?: React.ReactNode;
+  header?: React.ReactNode;
 }
 
 /**
