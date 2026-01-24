@@ -19,17 +19,17 @@ export const menuItems: MenuItem[] = [
     component: Home,
   },
   {
+    id: 'market-index',
+    label: '大盘',
+    component: MarketIndex,
+  },
+  {
     id: 'market',
     label: '股票数据',
     children: [
       {
-        id: 'market-index',
-        label: '大盘',
-        component: MarketIndex,
-      },
-      {
         id: 'stock-individual',
-        label: '个股',
+        label: '个股历史数据',
         component: StockPrices,
       },
     ],
