@@ -26,6 +26,8 @@
 - Uses separate requirements.txt and configuration from main CLI
 - Actual implementation exceeds original spec scope with additional middleware and error handling
 
+## User Scenarios & Testing *(mandatory)*
+
 ### User Story 1 - Fetch Available Stocks for Dropdown Menu (Priority: P1)
 
 When the frontend application loads, it needs to populate the stock selection dropdown with all available stocks from the database. The backend API must provide an endpoint that returns a list of stocks with their codes and names to enable the frontend to display selectable options.
