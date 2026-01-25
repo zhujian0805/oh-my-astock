@@ -25,6 +25,7 @@ def cli(log_level, log_file, debug):
     - Fetch stock information and historical price data from APIs
     - Search and retrieve real-time quotes
     - Analyze company information and financial data
+    - Access market overview data from Shanghai and Shenzhen exchanges
 
     Use --help with any command for detailed options.
 
@@ -34,6 +35,11 @@ def cli(log_level, log_file, debug):
         stocklib sync-historical --all-stocks --default-db --max-threads 10
         stocklib quote 000001,600000
         stocklib info 000001 --all
+        stocklib sse-summary
+        stocklib szse-summary
+        stocklib szse-area-summary
+        stocklib szse-sector-summary
+        stocklib sse-daily-deals
     """
     if debug:
         log_level = 'INFO'  # Show INFO and DEBUG messages when debug flag is used
@@ -900,6 +906,151 @@ def info(symbol, all, financials, structure, dividends, presses):
     except Exception as e:
         logger.error(f"Info fetch failed: {e}", exc_info=True)
         click.echo(f"Info fetch failed: {e}", err=True)
+        return 1
+
+
+@cli.command()
+def sse_summary():
+    """Fetch Shanghai Stock Exchange overall market summary.
+
+    Retrieves and displays current market overview data including total market value,
+    average PE ratio, and other key market metrics from the Shanghai Stock Exchange.
+
+    Outputs market summary data as JSON to stdout.
+
+    Examples:
+        # Get Shanghai exchange market summary
+        stocklib sse-summary
+    """
+    logger = get_logger(__name__)
+
+    try:
+        api_service = ApiService()
+        data = api_service.fetch_sse_summary()
+
+        # Output as JSON
+        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+
+    except Exception as e:
+        logger.error(f"Failed to fetch SSE summary: {e}")
+        click.echo(f"Failed to fetch SSE summary: {e}", err=True)
+        return 1
+
+
+@cli.command()
+def szse_summary():
+    """Fetch Shenzhen Stock Exchange security category statistics.
+
+    Retrieves and displays security category breakdown including quantity, trading amount,
+    and market value for different asset types in the Shenzhen Stock Exchange.
+
+    Outputs security category data as JSON array to stdout.
+
+    Examples:
+        # Get Shenzhen exchange security categories
+        stocklib szse-summary
+    """
+    logger = get_logger(__name__)
+
+    try:
+        api_service = ApiService()
+        data = api_service.fetch_szse_summary()
+
+        # Output as JSON
+        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+
+    except Exception as e:
+        logger.error(f"Failed to fetch SZSE summary: {e}")
+        click.echo(f"Failed to fetch SZSE summary: {e}", err=True)
+        return 1
+
+
+@cli.command()
+def szse_area_summary():
+    """Fetch Shenzhen Stock Exchange regional trading rankings.
+
+    Retrieves and displays trading activity rankings by geographic region including
+    total trading amounts and market share percentages.
+
+    Outputs regional trading data as JSON array to stdout.
+
+    Examples:
+        # Get regional trading rankings
+        stocklib szse-area-summary
+    """
+    logger = get_logger(__name__)
+
+    try:
+        api_service = ApiService()
+        data = api_service.fetch_szse_area_summary()
+
+        # Output as JSON
+        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+
+    except Exception as e:
+        logger.error(f"Failed to fetch SZSE area summary: {e}")
+        click.echo(f"Failed to fetch SZSE area summary: {e}", err=True)
+        return 1
+
+
+@cli.command()
+def szse_sector_summary():
+    """Fetch Shenzhen Stock Exchange industry sector transaction data.
+
+    Retrieves and displays stock transaction data grouped by industry sectors
+    including trading days, amounts, and volumes.
+
+    Outputs industry sector data as JSON array to stdout.
+
+    Examples:
+        # Get industry sector transaction data
+        stocklib szse-sector-summary
+    """
+    logger = get_logger(__name__)
+
+    try:
+        api_service = ApiService()
+        data = api_service.fetch_szse_sector_summary()
+
+        # Output as JSON
+        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+
+    except Exception as e:
+        logger.error(f"Failed to fetch SZSE sector summary: {e}")
+        click.echo(f"Failed to fetch SZSE sector summary: {e}", err=True)
+        return 1
+
+
+@cli.command()
+def sse_daily_deals():
+    """Fetch Shanghai Stock Exchange daily stock transaction details.
+
+    Retrieves and displays daily stock trading metrics including volume,
+    market capitalization, and other transaction details.
+
+    Outputs daily transaction data as JSON array to stdout.
+
+    Examples:
+        # Get Shanghai daily stock transactions
+        stocklib sse-daily-deals
+    """
+    logger = get_logger(__name__)
+
+    try:
+        api_service = ApiService()
+        data = api_service.fetch_sse_daily_deals()
+
+        # Output as JSON
+        click.echo(json.dumps(data, indent=2, ensure_ascii=False))
+        return 0
+
+    except Exception as e:
+        logger.error(f"Failed to fetch SSE daily deals: {e}")
+        click.echo(f"Failed to fetch SSE daily deals: {e}", err=True)
         return 1
 
 

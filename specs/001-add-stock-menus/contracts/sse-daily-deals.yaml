@@ -1,0 +1,38 @@
+# CLI Contract: sse-daily-deals
+
+**Command**: `stocklib sse-daily-deals`
+**Purpose**: Fetch and display daily stock transaction details for Shanghai Exchange
+
+## Interface
+
+### Command Signature
+```bash
+stocklib sse-daily-deals [OPTIONS]
+```
+
+### Options
+- `--help, -h`: Show help message and exit
+
+### Output
+- **Success**: JSON object or array of daily transaction details
+- **Error**: Error message to stderr, exit code 1
+
+### Example Output
+```json
+[
+  {
+    "date": "2026-01-25",
+    "trading_volume": 1250000000,
+    "market_capitalization": 45000000000.0,
+    "price_metrics": {...}
+  }
+]
+```
+
+## Contract Tests
+
+1. Command exists and is callable
+2. Returns valid JSON on success
+3. Returns exit code 0 on success
+4. Returns exit code 1 on API failure
+5. Includes appropriate error messages on failure

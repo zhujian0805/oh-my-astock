@@ -1,0 +1,38 @@
+# CLI Contract: szse-sector-summary
+
+**Command**: `stocklib szse-sector-summary`
+**Purpose**: Fetch and display stock industry transaction data for Shenzhen Exchange
+
+## Interface
+
+### Command Signature
+```bash
+stocklib szse-sector-summary [OPTIONS]
+```
+
+### Options
+- `--help, -h`: Show help message and exit
+
+### Output
+- **Success**: JSON array of industry sector transaction data
+- **Error**: Error message to stderr, exit code 1
+
+### Example Output
+```json
+[
+  {
+    "industry_sector": "信息技术",
+    "trading_days": 245,
+    "trading_amount": 1800000000.0,
+    "trading_volume": 50000000
+  }
+]
+```
+
+## Contract Tests
+
+1. Command exists and is callable
+2. Returns valid JSON array on success
+3. Returns exit code 0 on success
+4. Returns exit code 1 on API failure
+5. Includes appropriate error messages on failure

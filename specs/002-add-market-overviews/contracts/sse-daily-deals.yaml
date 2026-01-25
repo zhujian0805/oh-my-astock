@@ -1,0 +1,50 @@
+# API Contract: GET /api/market/sse-daily-deals
+
+**Purpose**: Fetch Shanghai Stock Exchange daily stock transaction details
+
+## Request
+
+### Endpoint
+```
+GET /api/market/sse-daily-deals
+```
+
+### Headers
+- Accept: application/json
+
+## Response
+
+### Success (200)
+```json
+{
+  "data": [
+    {
+      "日期": "2026-01-25",
+      "成交量": 1250000000,
+      "市值": 45000000000.0,
+      "交易指标": "活跃"
+    }
+  ],
+  "metadata": {
+    "count": 50,
+    "source": "Shanghai Stock Exchange"
+  }
+}
+```
+
+### Error Responses
+
+**500 Internal Server Error**
+```json
+{
+  "detail": "Failed to fetch SSE daily deals data"
+}
+```
+
+## Contract Tests
+
+1. Endpoint exists and accepts GET requests
+2. Returns 200 with properly formatted JSON on success
+3. Returns 500 with error detail on API failure
+4. Response includes data array and metadata object
+5. Data objects contain expected daily transaction fields

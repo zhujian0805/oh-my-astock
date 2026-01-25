@@ -1,0 +1,50 @@
+# API Contract: GET /api/market/szse-area-summary
+
+**Purpose**: Fetch Shenzhen Stock Exchange regional trading rankings
+
+## Request
+
+### Endpoint
+```
+GET /api/market/szse-area-summary
+```
+
+### Headers
+- Accept: application/json
+
+## Response
+
+### Success (200)
+```json
+{
+  "data": [
+    {
+      "序号": 1,
+      "地区": "上海",
+      "总交易额": 6599167582529.5,
+      "市场份额": 15.2
+    }
+  ],
+  "metadata": {
+    "count": 20,
+    "source": "Shenzhen Stock Exchange"
+  }
+}
+```
+
+### Error Responses
+
+**500 Internal Server Error**
+```json
+{
+  "detail": "Failed to fetch SZSE area summary data"
+}
+```
+
+## Contract Tests
+
+1. Endpoint exists and accepts GET requests
+2. Returns 200 with properly formatted JSON on success
+3. Returns 500 with error detail on API failure
+4. Response includes data array and metadata object
+5. Data objects contain expected regional trading fields

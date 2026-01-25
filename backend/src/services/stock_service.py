@@ -6,6 +6,7 @@ Business logic for stock data operations
 import logging
 import re
 from typing import List, Dict, Any, Optional
+import pandas as pd
 from ..database import db_service
 
 logger = logging.getLogger(__name__)
@@ -98,12 +99,157 @@ class StockService:
                 logger.warning("No SSE summary data available")
                 return []
 
+            # Convert DataFrame to dict and handle NaN values
             data = df.to_dict(orient="records")
+            # Replace NaN values with None for JSON compatibility
+            for record in data:
+                for key, value in record.items():
+                    if isinstance(value, float) and (pd.isna(value) or value != value):  # Check for NaN
+                        record[key] = None
+                    elif isinstance(value, float) and (value == float('inf') or value == float('-inf')):
+                        record[key] = None
+
             logger.info(f"Retrieved {len(data)} SSE summary records")
             return data
         except Exception as e:
             logger.error(f"Error fetching SSE summary: {e}")
             raise Exception("Failed to retrieve SSE summary data")
+
+    async def get_szse_summary(self) -> List[Dict[str, Any]]:
+        """Get Shenzhen Stock Exchange security category statistics"""
+        try:
+            logger.info("Fetching SZSE security category statistics")
+            import akshare as ak
+
+            df = ak.stock_szse_summary()
+            if df is None or df.empty:
+                logger.warning("No SZSE summary data available")
+                return []
+
+            # Convert DataFrame to dict and handle NaN values
+            data = df.to_dict(orient="records")
+            # Replace NaN values with None for JSON compatibility
+            for record in data:
+                for key, value in record.items():
+                    if isinstance(value, float) and (pd.isna(value) or value != value):  # Check for NaN
+                        record[key] = None
+                    elif isinstance(value, float) and (value == float('inf') or value == float('-inf')):
+                        record[key] = None
+
+            logger.info(f"Retrieved {len(data)} SZSE summary records")
+            return data
+        except Exception as e:
+            logger.error(f"Error fetching SZSE summary: {e}")
+            raise Exception("Failed to retrieve SZSE summary data")
+
+    async def get_szse_area_summary(self) -> List[Dict[str, Any]]:
+        """Get Shenzhen Stock Exchange regional trading rankings"""
+        try:
+            logger.info("Fetching SZSE regional trading rankings")
+            import akshare as ak
+
+            df = ak.stock_szse_area_summary()
+            if df is None or df.empty:
+                logger.warning("No SZSE area summary data available")
+                return []
+
+            # Convert DataFrame to dict and handle NaN values
+            data = df.to_dict(orient="records")
+            # Replace NaN values with None for JSON compatibility
+            for record in data:
+                for key, value in record.items():
+                    if isinstance(value, float) and (pd.isna(value) or value != value):  # Check for NaN
+                        record[key] = None
+                    elif isinstance(value, float) and (value == float('inf') or value == float('-inf')):
+                        record[key] = None
+
+            logger.info(f"Retrieved {len(data)} SZSE area summary records")
+            return data
+        except Exception as e:
+            logger.error(f"Error fetching SZSE area summary: {e}")
+            raise Exception("Failed to retrieve SZSE area summary data")
+
+    async def get_szse_sector_summary(self) -> List[Dict[str, Any]]:
+        """Get Shenzhen Stock Exchange industry sector transaction data"""
+        try:
+            logger.info("Fetching SZSE industry sector transaction data")
+            import akshare as ak
+
+            df = ak.stock_szse_sector_summary()
+            if df is None or df.empty:
+                logger.warning("No SZSE sector summary data available")
+                return []
+
+            # Convert DataFrame to dict and handle NaN values
+            data = df.to_dict(orient="records")
+            # Replace NaN values with None for JSON compatibility
+            for record in data:
+                for key, value in record.items():
+                    if isinstance(value, float) and (pd.isna(value) or value != value):  # Check for NaN
+                        record[key] = None
+                    elif isinstance(value, float) and (value == float('inf') or value == float('-inf')):
+                        record[key] = None
+
+            logger.info(f"Retrieved {len(data)} SZSE sector summary records")
+            return data
+        except Exception as e:
+            logger.error(f"Error fetching SZSE sector summary: {e}")
+            raise Exception("Failed to retrieve SZSE sector summary data")
+
+    async def get_sse_daily_deals(self) -> List[Dict[str, Any]]:
+        """Get Shanghai Stock Exchange daily stock transaction details"""
+        try:
+            logger.info("Fetching SSE daily stock transaction details")
+            import akshare as ak
+
+            df = ak.stock_sse_deal_daily()
+            if df is None or df.empty:
+                logger.warning("No SSE daily deals data available")
+                return []
+
+            # Convert DataFrame to dict and handle NaN values
+            data = df.to_dict(orient="records")
+            # Replace NaN values with None for JSON compatibility
+            for record in data:
+                for key, value in record.items():
+                    if isinstance(value, float) and (pd.isna(value) or value != value):  # Check for NaN
+                        record[key] = None
+                    elif isinstance(value, float) and (value == float('inf') or value == float('-inf')):
+                        record[key] = None
+
+            logger.info(f"Retrieved {len(data)} SSE daily deals records")
+            return data
+        except Exception as e:
+            logger.error(f"Error fetching SSE daily deals: {e}")
+            raise Exception("Failed to retrieve SSE daily deals data")
+
+    async def get_security_categories(self) -> List[Dict[str, Any]]:
+        """Get comprehensive security category statistics"""
+        try:
+            logger.info("Fetching comprehensive security category statistics")
+            import akshare as ak
+
+            # Use the same SZSE summary API for comprehensive categories
+            df = ak.stock_szse_summary()
+            if df is None or df.empty:
+                logger.warning("No security categories data available")
+                return []
+
+            # Convert DataFrame to dict and handle NaN values
+            data = df.to_dict(orient="records")
+            # Replace NaN values with None for JSON compatibility
+            for record in data:
+                for key, value in record.items():
+                    if isinstance(value, float) and (pd.isna(value) or value != value):  # Check for NaN
+                        record[key] = None
+                    elif isinstance(value, float) and (value == float('inf') or value == float('-inf')):
+                        record[key] = None
+
+            logger.info(f"Retrieved {len(data)} security categories records")
+            return data
+        except Exception as e:
+            logger.error(f"Error fetching security categories: {e}")
+            raise Exception("Failed to retrieve security categories data")
 
     async def stock_exists(self, stock_code: str) -> bool:
         """Check if stock exists in database"""

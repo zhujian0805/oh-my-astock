@@ -1,0 +1,38 @@
+# CLI Contract: szse-summary
+
+**Command**: `stocklib szse-summary`
+**Purpose**: Fetch and display Shenzhen Stock Exchange security category statistics
+
+## Interface
+
+### Command Signature
+```bash
+stocklib szse-summary [OPTIONS]
+```
+
+### Options
+- `--help, -h`: Show help message and exit
+
+### Output
+- **Success**: JSON array of security category statistics
+- **Error**: Error message to stderr, exit code 1
+
+### Example Output
+```json
+[
+  {
+    "security_type": "股票",
+    "quantity": 2500,
+    "trading_amount": 1250000000.0,
+    "market_value": 8500000000.0
+  }
+]
+```
+
+## Contract Tests
+
+1. Command exists and is callable
+2. Returns valid JSON array on success
+3. Returns exit code 0 on success
+4. Returns exit code 1 on API failure
+5. Includes appropriate error messages on failure

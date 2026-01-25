@@ -1,0 +1,37 @@
+# CLI Contract: szse-area-summary
+
+**Command**: `stocklib szse-area-summary`
+**Purpose**: Fetch and display regional trading rankings for Shenzhen Exchange
+
+## Interface
+
+### Command Signature
+```bash
+stocklib szse-area-summary [OPTIONS]
+```
+
+### Options
+- `--help, -h`: Show help message and exit
+
+### Output
+- **Success**: JSON array of regional trading data
+- **Error**: Error message to stderr, exit code 1
+
+### Example Output
+```json
+[
+  {
+    "region": "广东",
+    "trading_amount": 2500000000.0,
+    "market_share": 35.2
+  }
+]
+```
+
+## Contract Tests
+
+1. Command exists and is callable
+2. Returns valid JSON array on success
+3. Returns exit code 0 on success
+4. Returns exit code 1 on API failure
+5. Includes appropriate error messages on failure
