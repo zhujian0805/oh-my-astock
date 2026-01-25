@@ -6,6 +6,11 @@
 
 import React, { useState } from 'react';
 import StockMarketOverview from './StockMarketOverview';
+import SzseSummary from './SzseSummary';
+import SzseAreaSummary from './SzseAreaSummary';
+import SzseSectorSummary from './SzseSectorSummary';
+import SseDailyDeals from './SseDailyDeals';
+import SecurityCategories from './SecurityCategories';
 
 interface OverviewMenuItem {
   id: string;
@@ -18,6 +23,31 @@ const overviewMenuItems: OverviewMenuItem[] = [
     id: 'sse-summary',
     label: '上海证券交易所',
     component: StockMarketOverview,
+  },
+  {
+    id: 'szse-summary',
+    label: '深圳证券交易所',
+    component: SzseSummary,
+  },
+  {
+    id: 'szse-area-summary',
+    label: '地区交易排序',
+    component: SzseAreaSummary,
+  },
+  {
+    id: 'szse-sector-summary',
+    label: '股票行业成交',
+    component: SzseSectorSummary,
+  },
+  {
+    id: 'sse-daily-deals',
+    label: '上海证券交易所-每日概况',
+    component: SseDailyDeals,
+  },
+  {
+    id: 'security-categories',
+    label: '证券类别统计',
+    component: SecurityCategories,
   },
 ];
 

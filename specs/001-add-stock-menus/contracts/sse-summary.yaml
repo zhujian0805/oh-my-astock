@@ -1,0 +1,36 @@
+# CLI Contract: sse-summary
+
+**Command**: `stocklib sse-summary`
+**Purpose**: Fetch and display Shanghai Stock Exchange overall market data
+
+## Interface
+
+### Command Signature
+```bash
+stocklib sse-summary [OPTIONS]
+```
+
+### Options
+- `--help, -h`: Show help message and exit
+
+### Output
+- **Success**: JSON object containing Shanghai exchange market summary data
+- **Error**: Error message to stderr, exit code 1
+
+### Example Output
+```json
+{
+  "total_market_value": 45000000000.0,
+  "average_pe_ratio": 15.2,
+  "trading_volume": 1250000000,
+  "market_metrics": {...}
+}
+```
+
+## Contract Tests
+
+1. Command exists and is callable
+2. Returns valid JSON on success
+3. Returns exit code 0 on success
+4. Returns exit code 1 on API failure
+5. Includes appropriate error messages on failure

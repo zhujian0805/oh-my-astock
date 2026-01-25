@@ -17,6 +17,10 @@ Auto-generated from all feature plans. Last updated: 2026-01-25
 - **Tailwind CSS** (styling)
 - **aiohttp >= 3.8.0** (async HTTP client)
 - **websockets >= 10.0** (WebSocket support)
+- Python 3.10+ (match statements, modern f-strings required) + akshare >= 1.10.0 (Chinese stock API), click >= 8.0.0 (CLI framework), DuckDB >= 0.8.0 (database), pandas (data processing) (001-add-stock-menus)
+- DuckDB (single source of truth, no additional storage needed for this feature) (001-add-stock-menus)
+- Python 3.10+ (backend), TypeScript/React (frontend) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (002-add-market-overviews)
+- DuckDB (existing database, no new storage needed) (002-add-market-overviews)
 
 ## Project Structure
 
@@ -73,16 +77,9 @@ stocklib fetch-stocks --default-db # Fetch stock data
 - **Testing:** Write contract tests for all new features
 
 ## Recent Changes
+- 002-add-market-overviews: Added Python 3.10+ (backend), TypeScript/React (frontend) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0
+- 001-add-stock-menus: Added Python 3.10+ (match statements, modern f-strings required) + akshare >= 1.10.0 (Chinese stock API), click >= 8.0.0 (CLI framework), DuckDB >= 0.8.0 (database), pandas (data processing)
 - 2026-01-25: Updated all feature specs with current implementation status
-- 2026-01-25: Backend API (003): US1 complete, US2 critical blocker for MVP
-- 2026-01-25: Frontend (002): Basic structure complete, awaiting backend API integration
-- 2026-01-25: Core system (001): Fully implemented with expanded scope beyond original requirements
-- 2026-01-25: Confirmed dual backend architecture - root src/ (CLI) and backend/ (FastAPI API) are separate implementations
-- 2026-01-25: Backend/ directory contains active FastAPI service with dedicated requirements.txt and configuration
-- 2026-01-25: manage.sh script correctly manages both frontend (port 4142) and backend (port 8000) services
-- 003-backend-api: Added Python 3.10+ (matching existing codebase requirements) + FastAPI 0.109+, Uvicorn 0.27+, Pydantic 2.5+ (see research.md for rationale)
-- 2026-01-20: Updated to Python 3.10+ requirement (match statement usage)
-- 2026-01-20: Corrected project structure documentation
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

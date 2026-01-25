@@ -113,3 +113,103 @@ async def get_sse_summary():
     except Exception as e:
         logger.error(f"Error in get_sse_summary: {e}")
         raise HTTPException(status_code=500, detail="Failed to fetch SSE summary data")
+
+
+@router.get("/market/szse-summary")
+async def get_szse_summary():
+    """Get Shenzhen Stock Exchange security category statistics"""
+    try:
+        logger.info("SZSE summary request received")
+        data = await stock_service.get_szse_summary()
+
+        return {
+            "data": data,
+            "metadata": {
+                "count": len(data),
+                "source": "Shenzhen Stock Exchange"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error in get_szse_summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch SZSE summary data")
+
+
+@router.get("/market/szse-area-summary")
+async def get_szse_area_summary():
+    """Get Shenzhen Stock Exchange regional trading rankings"""
+    try:
+        logger.info("SZSE area summary request received")
+        data = await stock_service.get_szse_area_summary()
+
+        return {
+            "data": data,
+            "metadata": {
+                "count": len(data),
+                "source": "Shenzhen Stock Exchange"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error in get_szse_area_summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch SZSE area summary data")
+
+
+@router.get("/market/szse-sector-summary")
+async def get_szse_sector_summary():
+    """Get Shenzhen Stock Exchange industry sector transaction data"""
+    try:
+        logger.info("SZSE sector summary request received")
+        data = await stock_service.get_szse_sector_summary()
+
+        return {
+            "data": data,
+            "metadata": {
+                "count": len(data),
+                "source": "Shenzhen Stock Exchange"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error in get_szse_sector_summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch SZSE sector summary data")
+
+
+@router.get("/market/sse-daily-deals")
+async def get_sse_daily_deals():
+    """Get Shanghai Stock Exchange daily stock transaction details"""
+    try:
+        logger.info("SSE daily deals request received")
+        data = await stock_service.get_sse_daily_deals()
+
+        return {
+            "data": data,
+            "metadata": {
+                "count": len(data),
+                "source": "Shanghai Stock Exchange"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error in get_sse_daily_deals: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch SSE daily deals data")
+
+
+@router.get("/market/security-categories")
+async def get_security_categories():
+    """Get comprehensive security category statistics"""
+    try:
+        logger.info("Security categories request received")
+        data = await stock_service.get_security_categories()
+
+        return {
+            "data": data,
+            "metadata": {
+                "count": len(data),
+                "source": "Security Categories"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error in get_security_categories: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch security categories data")

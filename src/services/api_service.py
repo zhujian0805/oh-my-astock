@@ -533,29 +533,136 @@ class ApiService:
     @timed_operation("api_fetch_sse_summary")
     def fetch_sse_summary(self):
         """Fetch Shanghai Stock Exchange summary data from akshare.
-        
+
         Returns:
             List of dictionaries containing SSE market summary data
-            
+
         Raises:
             Exception: If API call fails
         """
         try:
             logger.info("Fetching Shanghai Stock Exchange summary...")
             df = ak.stock_sse_summary()
-            
+
             if df is None or df.empty:
                 logger.warning("No SSE summary data available")
                 return []
-            
+
             # Convert DataFrame to list of dicts
             data = df.to_dict(orient='records')
             logger.info(f"Successfully fetched SSE summary with {len(data)} records")
             return data
-            
+
         except Exception as e:
             logger.error(f"Failed to fetch SSE summary: {e}")
-            debug_metrics.log_error_with_trace(e, "sse_summary_fetch")
+            raise
+
+    @timed_operation("api_fetch_szse_summary")
+    def fetch_szse_summary(self):
+        """Fetch Shenzhen Stock Exchange security category statistics from akshare.
+
+        Returns:
+            List of dictionaries containing SZSE security category data
+
+        Raises:
+            Exception: If API call fails
+        """
+        try:
+            logger.info("Fetching Shenzhen Stock Exchange security category statistics...")
+            df = ak.stock_szse_summary()
+
+            if df is None or df.empty:
+                logger.warning("No SZSE summary data available")
+                return []
+
+            # Convert DataFrame to list of dicts
+            data = df.to_dict(orient='records')
+            logger.info(f"Successfully fetched SZSE summary with {len(data)} records")
+            return data
+
+        except Exception as e:
+            logger.error(f"Failed to fetch SZSE summary: {e}")
+            raise
+
+    @timed_operation("api_fetch_szse_area_summary")
+    def fetch_szse_area_summary(self):
+        """Fetch Shenzhen Stock Exchange regional trading rankings from akshare.
+
+        Returns:
+            List of dictionaries containing SZSE regional trading data
+
+        Raises:
+            Exception: If API call fails
+        """
+        try:
+            logger.info("Fetching Shenzhen Stock Exchange regional trading rankings...")
+            df = ak.stock_szse_area_summary()
+
+            if df is None or df.empty:
+                logger.warning("No SZSE area summary data available")
+                return []
+
+            # Convert DataFrame to list of dicts
+            data = df.to_dict(orient='records')
+            logger.info(f"Successfully fetched SZSE area summary with {len(data)} records")
+            return data
+
+        except Exception as e:
+            logger.error(f"Failed to fetch SZSE area summary: {e}")
+            raise
+
+    @timed_operation("api_fetch_szse_sector_summary")
+    def fetch_szse_sector_summary(self):
+        """Fetch Shenzhen Stock Exchange stock industry transaction data from akshare.
+
+        Returns:
+            List of dictionaries containing SZSE industry sector data
+
+        Raises:
+            Exception: If API call fails
+        """
+        try:
+            logger.info("Fetching Shenzhen Stock Exchange industry sector transaction data...")
+            df = ak.stock_szse_sector_summary()
+
+            if df is None or df.empty:
+                logger.warning("No SZSE sector summary data available")
+                return []
+
+            # Convert DataFrame to list of dicts
+            data = df.to_dict(orient='records')
+            logger.info(f"Successfully fetched SZSE sector summary with {len(data)} records")
+            return data
+
+        except Exception as e:
+            logger.error(f"Failed to fetch SZSE sector summary: {e}")
+            raise
+
+    @timed_operation("api_fetch_sse_daily_deals")
+    def fetch_sse_daily_deals(self):
+        """Fetch Shanghai Stock Exchange daily stock transaction details from akshare.
+
+        Returns:
+            List of dictionaries containing SSE daily transaction data
+
+        Raises:
+            Exception: If API call fails
+        """
+        try:
+            logger.info("Fetching Shanghai Stock Exchange daily transaction details...")
+            df = ak.stock_sse_deal_daily()
+
+            if df is None or df.empty:
+                logger.warning("No SSE daily deals data available")
+                return []
+
+            # Convert DataFrame to list of dicts
+            data = df.to_dict(orient='records')
+            logger.info(f"Successfully fetched SSE daily deals with {len(data)} records")
+            return data
+
+        except Exception as e:
+            logger.error(f"Failed to fetch SSE daily deals: {e}")
             raise
 
 

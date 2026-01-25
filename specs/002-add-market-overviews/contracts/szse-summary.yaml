@@ -1,0 +1,51 @@
+# API Contract: GET /api/market/szse-summary
+
+**Purpose**: Fetch Shenzhen Stock Exchange security category statistics
+
+## Request
+
+### Endpoint
+```
+GET /api/market/szse-summary
+```
+
+### Headers
+- Accept: application/json
+
+## Response
+
+### Success (200)
+```json
+{
+  "data": [
+    {
+      "证券类别": "股票",
+      "数量": 2874,
+      "成交金额": 492745828554.63,
+      "总市值": 25837664936960.49,
+      "流通市值": 22051689693333.94
+    }
+  ],
+  "metadata": {
+    "count": 10,
+    "source": "Shenzhen Stock Exchange"
+  }
+}
+```
+
+### Error Responses
+
+**500 Internal Server Error**
+```json
+{
+  "detail": "Failed to fetch SZSE summary data"
+}
+```
+
+## Contract Tests
+
+1. Endpoint exists and accepts GET requests
+2. Returns 200 with properly formatted JSON on success
+3. Returns 500 with error detail on API failure
+4. Response includes data array and metadata object
+5. Data objects contain expected security category fields

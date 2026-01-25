@@ -1,0 +1,51 @@
+# API Contract: GET /api/market/security-categories
+
+**Purpose**: Fetch detailed security category statistics
+
+## Request
+
+### Endpoint
+```
+GET /api/market/security-categories
+```
+
+### Headers
+- Accept: application/json
+
+## Response
+
+### Success (200)
+```json
+{
+  "data": [
+    {
+      "类别": "A股",
+      "数量": 5000,
+      "总市值": 500000000000.0,
+      "流通市值": 450000000000.0,
+      "平均价格": 25.5
+    }
+  ],
+  "metadata": {
+    "count": 15,
+    "source": "Security Categories"
+  }
+}
+```
+
+### Error Responses
+
+**500 Internal Server Error**
+```json
+{
+  "detail": "Failed to fetch security categories data"
+}
+```
+
+## Contract Tests
+
+1. Endpoint exists and accepts GET requests
+2. Returns 200 with properly formatted JSON on success
+3. Returns 500 with error detail on API failure
+4. Response includes data array and metadata object
+5. Data objects contain expected security category fields
