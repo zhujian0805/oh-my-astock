@@ -507,10 +507,15 @@ src/
 ├── config.py            # FastAPI configuration
 └── database.py          # FastAPI database service
 
-backend/                 # Legacy Node.js backend (deprecated)
-├── package.json         # Removed - migrated to Python
-├── src/                 # Removed - migrated to Python
-└── .env.example         # Updated for FastAPI
+backend/                 # FastAPI backend service (Python)
+├── src/                 # FastAPI application code
+│   ├── main.py          # FastAPI app with CORS and logging
+│   ├── config.py        # Backend configuration
+│   ├── database.py      # Database service
+│   ├── routers/         # API endpoints
+│   └── services/        # Business logic
+├── requirements.txt     # Backend dependencies
+└── .env.example         # Configuration template
 
 frontend/                # React/Vite frontend application
 ├── src/
