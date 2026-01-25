@@ -529,4 +529,35 @@ class ApiService:
             return False
 
         logger.info(f"Validated {len(stocks)} stocks successfully")
-        return True
+
+    @timed_operation("api_fetch_sse_summary")
+    def fetch_sse_summary(self):
+        """Fetch Shanghai Stock Exchange summary data from akshare.
+        
+        Returns:
+            List of dictionaries containing SSE market summary data
+            
+        Raises:
+            Exception: If API call fails
+        """
+        try:
+            logger.info("Fetching Shanghai Stock Exchange summary...")
+            df = ak.stock_sse_summary()
+            
+            if df is None or df.empty:
+                logger.warning("No SSE summary data available")
+                return []
+            
+            # Convert DataFrame to list of dicts
+            data = df.to_dict(orient='records')
+            logger.info(f"Successfully fetched SSE summary with {len(data)} records")
+            return data
+            
+        except Exception as e:
+            logger.error(f"Failed to fetch SSE summary: {e}")
+            debug_metrics.log_error_with_trace(e, "sse_summary_fetch")
+            raise
+
+
+# Singleton instance
+api_service = ApiService()

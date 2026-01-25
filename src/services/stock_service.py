@@ -7,6 +7,7 @@ import logging
 import re
 from typing import List, Dict, Any, Optional
 from ..database import db_service
+from .api_service import api_service
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,17 @@ class StockService:
         except Exception as e:
             logger.error(f"Error fetching historical data for {stock_code}: {e}")
             raise Exception("Failed to retrieve historical data")
+
+    async def get_sse_summary(self) -> List[Dict[str, Any]]:
+        """Get Shanghai Stock Exchange summary data"""
+        try:
+            logger.info("Fetching SSE summary data")
+            data = api_service.fetch_sse_summary()
+            logger.info(f"Retrieved {len(data)} SSE summary records")
+            return data
+        except Exception as e:
+            logger.error(f"Error fetching SSE summary: {e}")
+            raise Exception("Failed to retrieve SSE summary data")
 
     async def stock_exists(self, stock_code: str) -> bool:
         """Check if stock exists in database"""

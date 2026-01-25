@@ -93,3 +93,23 @@ async def get_historical_data(
     except Exception as e:
         logger.error(f"Error in get_historical_data for {code}: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/market/sse-summary")
+async def get_sse_summary():
+    """Get Shanghai Stock Exchange summary data"""
+    try:
+        logger.info("SSE summary request received")
+        data = await stock_service.get_sse_summary()
+
+        return {
+            "data": data,
+            "metadata": {
+                "count": len(data),
+                "source": "Shanghai Stock Exchange"
+            }
+        }
+
+    except Exception as e:
+        logger.error(f"Error in get_sse_summary: {e}")
+        raise HTTPException(status_code=500, detail="Failed to fetch SSE summary data")

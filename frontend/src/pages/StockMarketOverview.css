@@ -1,0 +1,31 @@
+.stock-market-overview {
+  width: 100%;
+  min-height: 100vh;
+  background-color: #f9fafb;
+}
+
+.stock-market-overview table {
+  border-collapse: collapse;
+}
+
+.stock-market-overview tbody tr:hover {
+  background-color: #f3f4f6;
+}
+
+.stock-market-overview th {
+  background-color: #f3f4f6;
+  color: #374151;
+  font-weight: 600;
+  padding: 12px 24px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.stock-market-overview td {
+  padding: 12px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.stock-market-overview tbody tr:last-child td {
+  border-bottom: none;
+}

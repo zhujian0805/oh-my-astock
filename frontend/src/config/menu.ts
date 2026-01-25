@@ -5,8 +5,8 @@
 
 import { MenuItem } from '../types';
 import StockPrices from '../pages/StockPrices';
+import StockMarketOverviewPage from '../pages/StockMarketOverviewPage';
 import Home from '../pages/Home';
-import MarketIndex from '../pages/MarketIndex';
 
 /**
  * Available menu items
@@ -19,17 +19,17 @@ export const menuItems: MenuItem[] = [
     component: Home,
   },
   {
-    id: 'market-index',
-    label: '大盘',
-    component: MarketIndex,
-  },
-  {
     id: 'market',
-    label: '股票数据',
+    label: '股市数据',
     children: [
       {
+        id: 'market-overview',
+        label: '股票市场总貌',
+        component: StockMarketOverviewPage,
+      },
+      {
         id: 'stock-individual',
-        label: '个股历史数据',
+        label: '历史行情数据',
         component: StockPrices,
       },
     ],
