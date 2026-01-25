@@ -1,0 +1,91 @@
+openapi: 3.0.1
+info:
+  title: Individual Stock Information API
+  description: API for retrieving merged individual stock information
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /stocks/{stock_code}/info:
+    get:
+      summary: Get merged individual stock information
+      description: Retrieves comprehensive stock information by merging data from East Money and Xueqiu APIs
+      parameters:
+        - name: stock_code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+            example: "000001"
+          description: 6-digit stock code
+      responses:
+        '200':
+          description: Successful response with merged stock data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stock_code:
+                    type: string
+                    example: "000001"
+                  data:
+                    type: object
+                    additionalProperties:
+                      type: string
+                    description: Merged key-value pairs from both APIs
+                    example:
+                      "最新": "7.05"
+                      "股票代码": "000001"
+                      "org_name_cn": "平安银行股份有限公司"
+                  source_status:
+                    type: object
+                    properties:
+                      em_api:
+                        type: string
+                        enum: ["success", "failed"]
+                      xq_api:
+                        type: string
+                        enum: ["success", "failed"]
+                    description: Status of each data source
+        '400':
+          description: Invalid stock code format
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Invalid stock code format"
+        '404':
+          description: Stock not found or data unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Stock data not available"
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Rate limit exceeded, please retry later"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Internal server error"

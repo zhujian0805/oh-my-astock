@@ -7,6 +7,7 @@ import { MenuItem } from '../types';
 import StockPrices from '../pages/StockPrices';
 import StockMarketOverviewPage from '../pages/StockMarketOverviewPage';
 import Home from '../pages/Home';
+import IndividualStockPage from '../pages/IndividualStockPage';
 
 /**
  * Available menu items
@@ -28,9 +29,14 @@ export const menuItems: MenuItem[] = [
         component: StockMarketOverviewPage,
       },
       {
-        id: 'stock-individual',
+        id: 'stock-prices',
         label: '历史行情数据',
         component: StockPrices,
+      },
+      {
+        id: 'stock-individual',
+        label: '个股信息',
+        component: IndividualStockPage,
       },
     ],
   },

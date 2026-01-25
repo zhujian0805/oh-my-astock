@@ -10,6 +10,7 @@ import logging
 from .config import settings
 from .database import db_service
 from .routers import stocks
+from .routers import stock_info_router
 
 # Configure logging
 logging.basicConfig(
@@ -80,6 +81,7 @@ async def health_check():
 
 # Include routers
 app.include_router(stocks.router, prefix="/api", tags=["stocks"])
+app.include_router(stock_info_router.router, prefix="/api/v1", tags=["stock-info"])
 
 @app.get("/api/docs")
 async def api_docs():
