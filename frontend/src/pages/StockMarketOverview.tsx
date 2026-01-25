@@ -4,7 +4,6 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import './StockMarketOverview.css';
 import apiClient from '@/services/api';
 
 interface SSESummaryRaw {
@@ -28,7 +27,7 @@ const StockMarketOverview: React.FC = () => {
       const response = await apiClient.get('/market/sse-summary');
       const rawData = response.data.data || [];
       setData(rawData);
-      
+
       // Extract column names from first row
       if (rawData.length > 0) {
         setColumns(Object.keys(rawData[0]));
@@ -54,7 +53,7 @@ const StockMarketOverview: React.FC = () => {
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">加载市场数据中...</p>
+          <p className="text-gray-600 dark:text-gray-400">加载市场数据中...</p>
         </div>
       </div>
     );
@@ -64,10 +63,10 @@ const StockMarketOverview: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
           <button
             onClick={fetchSSESummary}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors"
           >
             重新加载
           </button>
@@ -77,56 +76,60 @@ const StockMarketOverview: React.FC = () => {
   }
 
   return (
-    <div className="stock-market-overview p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold text-gray-800">
+    <div className="flex flex-col h-full gap-4 w-full p-4 dark:bg-gray-900 transition-colors duration-200">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex items-center justify-between transition-colors duration-200">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
           上海证券交易所行情总览
         </h1>
         <button
           onClick={fetchSSESummary}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
         >
           刷新
         </button>
       </div>
 
-      <div className="overflow-x-auto bg-white rounded-lg shadow">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-gray-100 border-b">
-              {columns.map((col) => (
-                <th
-                  key={col}
-                  className="px-6 py-3 text-left text-sm font-semibold text-gray-700 whitespace-nowrap"
-                >
-                  {col}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {data.length > 0 ? (
-              data.map((row, index) => (
-                <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                  {columns.map((col) => (
-                    <td
-                      key={`${index}-${col}`}
-                      className="px-6 py-4 text-sm text-gray-900"
-                    >
-                      {formatValue(row[col])}
-                    </td>
-                  ))}
-                </tr>
-              ))
-            ) : (
+      {/* Table */}
+      <div className="flex-1 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors duration-200">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <td colSpan={columns.length} className="px-6 py-4 text-center text-gray-500">
-                  暂无数据
-                </td>
+                {columns.map((col) => (
+                  <th
+                    key={col}
+                    className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap"
+                  >
+                    {col}
+                  </th>
+                ))}
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {data.length > 0 ? (
+                data.map((row, index) => (
+                  <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    {columns.map((col) => (
+                      <td
+                        key={`${index}-${col}`}
+                        className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 whitespace-nowrap"
+                      >
+                        {formatValue(row[col])}
+                      </td>
+                    ))}
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={columns.length} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    暂无数据
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
