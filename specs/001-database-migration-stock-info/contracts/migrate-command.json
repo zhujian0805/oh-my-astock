@@ -1,0 +1,44 @@
+{
+  "command": "stocklib migrate",
+  "description": "Execute pending database migrations",
+  "options": [
+    {
+      "name": "--dry-run",
+      "type": "boolean",
+      "description": "Show what migrations would be executed without running them",
+      "default": false
+    },
+    {
+      "name": "--version",
+      "type": "integer",
+      "description": "Migrate to specific version (rollback if lower than current)",
+      "required": false
+    }
+  ],
+  "outputs": {
+    "success": {
+      "exit_code": 0,
+      "stdout_pattern": "Successfully applied [0-9]+ migration\\(s\\)",
+      "stderr_empty": true
+    },
+    "no_migrations": {
+      "exit_code": 0,
+      "stdout_pattern": "No pending migrations",
+      "stderr_empty": true
+    },
+    "dry_run": {
+      "exit_code": 0,
+      "stdout_pattern": "Pending migrations:\\n[\\s\\S]*",
+      "stderr_empty": true
+    },
+    "migration_failure": {
+      "exit_code": 1,
+      "stdout_pattern": "Migration failed: [\\s\\S]*",
+      "stderr_pattern": "ERROR: [\\s\\S]*"
+    }
+  },
+  "side_effects": {
+    "database_changes": "schema_migrations table updated with applied migrations",
+    "table_creation": "New tables created as per migration scripts"
+  }
+}

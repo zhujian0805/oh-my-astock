@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import apiClient from '@/services/api';
+import MonthPicker from '@/components/MonthPicker';
 
 interface SZSESectorSummaryRaw {
   [key: string]: string | number;
@@ -15,16 +16,23 @@ const SzseSectorSummary: React.FC = () => {
   const [columns, setColumns] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMonth, setSelectedMonth] = useState<{ year: number; month: number } | null>(null);
 
   useEffect(() => {
     fetchSZSESectorSummary();
-  }, []);
+  }, [selectedMonth]);
 
   const fetchSZSESectorSummary = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await apiClient.get('/market/szse-sector-summary');
+
+      const params: any = {};
+      if (selectedMonth) {
+        params.month = `${selectedMonth.year}${selectedMonth.month.toString().padStart(2, '0')}`;
+      }
+
+      const response = await apiClient.get('/market/szse-sector-summary', { params });
       const rawData = response.data.data || [];
       setData(rawData);
 
@@ -79,15 +87,21 @@ const SzseSectorSummary: React.FC = () => {
     <div className="flex flex-col h-full gap-4 w-full p-4 dark:bg-gray-900 transition-colors duration-200">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-100 dark:border-gray-700 p-4 flex items-center justify-between transition-colors duration-200">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          股票行业成交
-        </h1>
-        <button
-          onClick={fetchSZSESectorSummary}
-          className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors font-medium"
-        >
-          刷新
-        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            股票行业成交
+          </h1>
+          {selectedMonth && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              {selectedMonth.year}年{selectedMonth.month.toString().padStart(2, '0')}月数据
+            </p>
+          )}
+        </div>
+        <MonthPicker
+          selectedMonth={selectedMonth}
+          onMonthSelect={setSelectedMonth}
+          className="w-40"
+        />
       </div>
 
       {/* Table */}

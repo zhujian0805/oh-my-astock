@@ -1,0 +1,325 @@
+openapi: 3.0.3
+info:
+  title: Stock Information API
+  description: API for retrieving comprehensive stock information merged from multiple sources
+  version: 1.0.0
+  contact:
+    name: oh-my-astock Development Team
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+  - url: https://api.oh-my-astock.com/v1
+    description: Production server
+
+paths:
+  /stocks/{stock_code}/info:
+    get:
+      summary: Get comprehensive stock information
+      description: Retrieve merged stock information from East Money and Xueqiu APIs
+      operationId: getStockInfo
+      parameters:
+        - name: stock_code
+          in: path
+          required: true
+          description: Stock code (e.g., '000001', '600000')
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+            example: "000001"
+      responses:
+        '200':
+          description: Successful response with stock information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockInfo'
+              example:
+                stock_code: "000001"
+                company_name: "平安银行股份有限公司"
+                industry: "银行"
+                sector: "金融地产"
+                market: "SZ"
+                listing_date: "1991-04-03"
+                total_shares: 17170411400
+                circulating_shares: 17170411400
+                market_cap: 1234567890.12
+                pe_ratio: 12.34
+                pb_ratio: 1.23
+                dividend_yield: 2.5
+                roe: 8.9
+                roa: 0.8
+                net_profit: 123456789.01
+                total_assets: 9876543210.98
+                total_liability: 8765432109.87
+                created_at: "2024-01-25T10:00:00Z"
+                updated_at: "2024-01-25T10:00:00Z"
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Stock not found"
+                code: "STOCK_NOT_FOUND"
+                stock_code: "000001"
+        '422':
+          description: Invalid stock code format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Invalid stock code format"
+                code: "INVALID_STOCK_CODE"
+                details: "Stock code must be 6 digits"
+        '503':
+          description: External API unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Stock information temporarily unavailable"
+                code: "API_UNAVAILABLE"
+                retry_after: 300
+
+  /stocks/info/batch:
+    post:
+      summary: Get stock information for multiple stocks
+      description: Retrieve stock information for multiple stock codes in a single request
+      operationId: getStockInfoBatch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                stock_codes:
+                  type: array
+                  items:
+                    type: string
+                    pattern: '^[0-9]{6}$'
+                  minItems: 1
+                  maxItems: 50
+                  example: ["000001", "000002", "600000"]
+                force_refresh:
+                  type: boolean
+                  default: false
+                  description: Force refresh from external APIs instead of using cache
+              required:
+                - stock_codes
+      responses:
+        '200':
+          description: Successful batch response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockInfo'
+                  errors:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockError'
+                  processed_count:
+                    type: integer
+                    example: 3
+                  success_count:
+                    type: integer
+                    example: 2
+                  error_count:
+                    type: integer
+                    example: 1
+                example:
+                  results:
+                    - stock_code: "000001"
+                      company_name: "平安银行股份有限公司"
+                      market_cap: 1234567890.12
+                    - stock_code: "600000"
+                      company_name: "浦发银行股份有限公司"
+                      market_cap: 987654321.09
+                  errors:
+                    - stock_code: "000002"
+                      error: "Stock not found"
+                      code: "STOCK_NOT_FOUND"
+                  processed_count: 3
+                  success_count: 2
+                  error_count: 1
+        '400':
+          description: Invalid request parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '503':
+          description: External API unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    StockInfo:
+      type: object
+      required:
+        - stock_code
+        - company_name
+        - market
+        - created_at
+        - updated_at
+      properties:
+        stock_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Stock code (6 digits)
+          example: "000001"
+        company_name:
+          type: string
+          maxLength: 100
+          description: Full company name
+          example: "平安银行股份有限公司"
+        industry:
+          type: string
+          maxLength: 50
+          description: Industry classification
+          example: "银行"
+        sector:
+          type: string
+          maxLength: 50
+          description: Sector classification
+          example: "金融地产"
+        market:
+          type: string
+          enum: ["SH", "SZ"]
+          description: Stock market
+          example: "SZ"
+        listing_date:
+          type: string
+          format: date
+          description: IPO date
+          example: "1991-04-03"
+        total_shares:
+          type: integer
+          minimum: 0
+          description: Total shares outstanding
+          example: 17170411400
+        circulating_shares:
+          type: integer
+          minimum: 0
+          description: Circulating shares
+          example: 17170411400
+        market_cap:
+          type: number
+          minimum: 0
+          description: Market capitalization (CNY)
+          example: 1234567890.12
+        pe_ratio:
+          type: number
+          minimum: 0
+          description: Price-to-earnings ratio
+          example: 12.34
+        pb_ratio:
+          type: number
+          minimum: 0
+          description: Price-to-book ratio
+          example: 1.23
+        dividend_yield:
+          type: number
+          minimum: 0
+          maximum: 100
+          description: Dividend yield (%)
+          example: 2.5
+        roe:
+          type: number
+          minimum: -100
+          maximum: 100
+          description: Return on equity (%)
+          example: 8.9
+        roa:
+          type: number
+          minimum: -100
+          maximum: 100
+          description: Return on assets (%)
+          example: 0.8
+        net_profit:
+          type: number
+          description: Latest net profit (CNY)
+          example: 123456789.01
+        total_assets:
+          type: number
+          minimum: 0
+          description: Total assets (CNY)
+          example: 9876543210.98
+        total_liability:
+          type: number
+          minimum: 0
+          description: Total liability (CNY)
+          example: 8765432109.87
+        created_at:
+          type: string
+          format: date-time
+          description: Record creation timestamp
+          example: "2024-01-25T10:00:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2024-01-25T10:00:00Z"
+
+    StockError:
+      type: object
+      required:
+        - stock_code
+        - error
+        - code
+      properties:
+        stock_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Stock code that failed
+          example: "000002"
+        error:
+          type: string
+          description: Error message
+          example: "Stock not found"
+        code:
+          type: string
+          enum: ["STOCK_NOT_FOUND", "API_ERROR", "DATA_VALIDATION_ERROR"]
+          description: Error code
+          example: "STOCK_NOT_FOUND"
+
+    Error:
+      type: object
+      required:
+        - error
+        - code
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Stock not found"
+        code:
+          type: string
+          description: Machine-readable error code
+          example: "STOCK_NOT_FOUND"
+        details:
+          type: string
+          description: Additional error details
+          example: "Stock code must be 6 digits"
+        stock_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Related stock code (when applicable)
+          example: "000001"
+        retry_after:
+          type: integer
+          minimum: 0
+          description: Seconds to wait before retrying
+          example: 300

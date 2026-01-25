@@ -21,6 +21,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-25
 - DuckDB (single source of truth, no additional storage needed for this feature) (001-add-stock-menus)
 - Python 3.10+ (backend), TypeScript/React (frontend) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (002-add-market-overviews)
 - DuckDB (existing database, no new storage needed) (002-add-market-overviews)
+- Python 3.10+ (match statements, modern f-strings required) + akshare >= 1.10.0 (Chinese stock API), click >= 8.0.0 (CLI framework), DuckDB >= 0.8.0 (database), pandas (data processing), FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend) (001-database-migration-stock-info)
+- DuckDB >= 0.8.0 (single source of truth, no additional storage needed) (001-database-migration-stock-info)
 
 ## Project Structure
 
@@ -77,9 +79,9 @@ stocklib fetch-stocks --default-db # Fetch stock data
 - **Testing:** Write contract tests for all new features
 
 ## Recent Changes
+- 001-database-migration-stock-info: Added Python 3.10+ (match statements, modern f-strings required) + akshare >= 1.10.0 (Chinese stock API), click >= 8.0.0 (CLI framework), DuckDB >= 0.8.0 (database), pandas (data processing), FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend)
+- 001-calendar-stock-industry: Added Python 3.10+ (backend), TypeScript/React (frontend) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0
 - 002-add-market-overviews: Added Python 3.10+ (backend), TypeScript/React (frontend) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0
-- 001-add-stock-menus: Added Python 3.10+ (match statements, modern f-strings required) + akshare >= 1.10.0 (Chinese stock API), click >= 8.0.0 (CLI framework), DuckDB >= 0.8.0 (database), pandas (data processing)
-- 2026-01-25: Updated all feature specs with current implementation status
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

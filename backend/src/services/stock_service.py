@@ -169,15 +169,23 @@ class StockService:
             logger.error(f"Error fetching SZSE area summary: {e}")
             raise Exception("Failed to retrieve SZSE area summary data")
 
-    async def get_szse_sector_summary(self) -> List[Dict[str, Any]]:
+    async def get_szse_sector_summary(self, month: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get Shenzhen Stock Exchange industry sector transaction data"""
         try:
-            logger.info("Fetching SZSE industry sector transaction data")
+            logger.info(f"Fetching SZSE industry sector transaction data for month: {month}")
             import akshare as ak
 
-            df = ak.stock_szse_sector_summary()
+            # Prepare parameters for akshare API
+            params = {}
+            if month:
+                # Validate month format (YYYYMM)
+                if not re.match(r'^\d{6}$', month):
+                    raise ValueError(f"Invalid month format: {month}. Expected YYYYMM format.")
+                params['date'] = month
+
+            df = ak.stock_szse_sector_summary(**params)
             if df is None or df.empty:
-                logger.warning("No SZSE sector summary data available")
+                logger.warning(f"No SZSE sector summary data available for month: {month}")
                 return []
 
             # Convert DataFrame to dict and handle NaN values
@@ -190,10 +198,10 @@ class StockService:
                     elif isinstance(value, float) and (value == float('inf') or value == float('-inf')):
                         record[key] = None
 
-            logger.info(f"Retrieved {len(data)} SZSE sector summary records")
+            logger.info(f"Retrieved {len(data)} SZSE sector summary records for month: {month}")
             return data
         except Exception as e:
-            logger.error(f"Error fetching SZSE sector summary: {e}")
+            logger.error(f"Error fetching SZSE sector summary for month {month}: {e}")
             raise Exception("Failed to retrieve SZSE sector summary data")
 
     async def get_sse_daily_deals(self) -> List[Dict[str, Any]]:

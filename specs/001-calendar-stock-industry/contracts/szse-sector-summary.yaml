@@ -1,0 +1,67 @@
+# API Contract: GET /api/market/szse-sector-summary
+
+**Purpose**: Fetch Shenzhen Stock Exchange industry sector transaction data, optionally filtered by month
+
+## Request
+
+### Endpoint
+```
+GET /api/market/szse-sector-summary
+```
+
+### Query Parameters
+- `month`: Optional string in "YYYYMM" format (e.g., "202501")
+  - If not provided, returns current/latest data
+  - Must be valid year-month format
+  - Year range: 2020-2030
+  - Month range: 01-12
+
+### Headers
+- Accept: application/json
+
+## Response
+
+### Success (200)
+```json
+{
+  "data": [
+    {
+      "行业名称": "行业A",
+      "成交金额": 1234567890.12,
+      "成交量": 987654,
+      "涨跌幅": 2.34
+    }
+  ],
+  "metadata": {
+    "count": 10,
+    "source": "Shenzhen Stock Exchange",
+    "month": "202501"
+  }
+}
+```
+
+### Error Responses
+
+**400 Bad Request**
+```json
+{
+  "detail": "Invalid month format. Expected YYYYMM (e.g., 202501)"
+}
+```
+
+**500 Internal Server Error**
+```json
+{
+  "detail": "Failed to fetch SZSE sector summary data"
+}
+```
+
+## Contract Tests
+
+1. Endpoint exists and accepts GET requests
+2. Returns 200 with properly formatted JSON on success
+3. Accepts optional month parameter in YYYYMM format
+4. Returns 400 for invalid month format
+5. Returns 500 with error detail on API failure
+6. Response includes data array, metadata object, and month in metadata when specified
+7. Data objects contain expected industry sector fields

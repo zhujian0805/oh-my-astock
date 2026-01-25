@@ -156,18 +156,22 @@ async def get_szse_area_summary():
 
 
 @router.get("/market/szse-sector-summary")
-async def get_szse_sector_summary():
+async def get_szse_sector_summary(month: Optional[str] = Query(None, description="Month in YYYYMM format (e.g., 202501)")):
     """Get Shenzhen Stock Exchange industry sector transaction data"""
     try:
-        logger.info("SZSE sector summary request received")
-        data = await stock_service.get_szse_sector_summary()
+        logger.info(f"SZSE sector summary request received for month: {month}")
+        data = await stock_service.get_szse_sector_summary(month)
+
+        metadata = {
+            "count": len(data),
+            "source": "Shenzhen Stock Exchange"
+        }
+        if month:
+            metadata["month"] = month
 
         return {
             "data": data,
-            "metadata": {
-                "count": len(data),
-                "source": "Shenzhen Stock Exchange"
-            }
+            "metadata": metadata
         }
 
     except Exception as e:
