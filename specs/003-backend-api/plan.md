@@ -125,12 +125,23 @@ src/
 ├── services/        # Business logic (DatabaseService - REUSE)
 ├── cli/             # CLI commands (existing, not modified)
 ├── lib/             # Utilities (config, logging - REUSE)
-└── api/             # NEW: API layer for this feature
-    ├── __init__.py
-    ├── app.py       # API application initialization
-    ├── routes.py    # Endpoint definitions
-    ├── schemas.py   # Request/response models (Pydantic or dataclasses)
-    └── middleware.py # CORS, logging middleware
+└── routers/         # FastAPI route handlers (existing, not modified)
+
+# NEW: Separate backend service (implemented architecture)
+backend/
+├── src/             # FastAPI application (ACTUAL IMPLEMENTATION)
+│   ├── main.py      # FastAPI app with CORS, logging, error handling
+│   ├── config.py    # Backend-specific configuration
+│   ├── database.py  # Database service for API
+│   ├── routers/     # API endpoints
+│   │   ├── stocks.py # GET /api/stocks endpoints
+│   │   └── __init__.py
+│   └── services/    # API-specific services
+│       ├── stock_service.py # Business logic for stock operations
+│       └── __init__.py
+├── requirements.txt # Backend dependencies (FastAPI, Uvicorn, Pydantic)
+├── .env.example     # Configuration template
+└── .env             # Runtime configuration
 
 tests/
 ├── contract/
@@ -145,7 +156,7 @@ frontend/            # Existing React frontend (from feature 002)
 │   └── services/    # Will consume new API endpoints
 ```
 
-**Structure Decision**: This feature adds a new `src/api/` directory to house the HTTP API layer. This maintains the existing modular architecture (CLI, models, services, lib) while adding a parallel interface layer for web access. The API layer will compose existing services (DatabaseService) and models (Stock, DatabaseConnection) without duplicating business logic. Tests follow the existing pattern in `tests/contract/` and `tests/integration/`.
+**Structure Decision (UPDATED)**: Initial plan specified `src/api/` directory for API layer, but implementation created separate `backend/` service for better deployment isolation. This provides cleaner separation between CLI tools (in `src/`) and web API (in `backend/`). The backend reuses existing models and services from `src/` but maintains its own dependency management and configuration.
 
 ## Complexity Tracking
 

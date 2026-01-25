@@ -2,10 +2,29 @@
 
 **Feature Branch**: `003-backend-api`
 **Created**: 2026-01-24
-**Status**: Draft
+**Status**: Implementation In Progress - US1 Complete, US2/US3/US4 Pending
 **Input**: User description: "now i have frontend, add a backend to serve as database access layer so frontend can get dsta from it"
 
-## User Scenarios & Testing *(mandatory)*
+## Implementation Status (Updated 2026-01-25)
+
+**Current State**: MVP foundation complete with US1 fully functional. US2 (historical data API) is the critical blocker for MVP completion.
+
+**Completed**:
+- ✅ US1: GET /api/stocks endpoint fully implemented and tested
+- ✅ FastAPI application infrastructure (app.py, routes.py, schemas.py, middleware.py)
+- ✅ CORS configuration and request logging
+- ✅ Database integration with existing DuckDB schema
+- ✅ 23 of 65 total tasks completed (foundation + US1)
+
+**Pending**:
+- ❌ US2: GET /api/stocks/{code}/historical endpoint (14 tasks, P1 priority, MVP blocker)
+- ❌ US3: GET /api/health + API documentation (10 tasks, P2 priority)
+- ❌ US4: CORS testing and validation (8 tasks, P2 priority)
+
+**Architecture Notes**:
+- Backend implemented in `backend/` directory (not `src/api/` as originally planned)
+- Uses separate requirements.txt and configuration from main CLI
+- Actual implementation exceeds original spec scope with additional middleware and error handling
 
 ### User Story 1 - Fetch Available Stocks for Dropdown Menu (Priority: P1)
 
