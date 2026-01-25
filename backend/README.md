@@ -15,6 +15,7 @@ Python/FastAPI backend for oh-my-astock stock market application.
 
 - Python >= 3.10
 - DuckDB database with stock data (located at `../data/stocks.duckdb`)
+- akshare (for SSE market summary data)
 
 ## Installation
 
@@ -91,6 +92,25 @@ Health check endpoint for monitoring.
   "status": "ok",
   "timestamp": "2024-01-24T12:34:56.789Z",
   "database_connected": true
+}
+```
+
+### GET /api/market/sse-summary
+Get Shanghai Stock Exchange market summary data.
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "项目": "指数",
+      "数据": "3,000.00"
+    }
+  ],
+  "metadata": {
+    "count": 1,
+    "source": "Shanghai Stock Exchange"
+  }
 }
 ```
 

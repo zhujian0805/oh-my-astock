@@ -87,6 +87,24 @@ class StockService:
             logger.error(f"Error fetching historical data for {stock_code}: {e}")
             raise Exception("Failed to retrieve historical data")
 
+    async def get_sse_summary(self) -> List[Dict[str, Any]]:
+        """Get Shanghai Stock Exchange summary data"""
+        try:
+            logger.info("Fetching SSE summary data")
+            import akshare as ak
+
+            df = ak.stock_sse_summary()
+            if df is None or df.empty:
+                logger.warning("No SSE summary data available")
+                return []
+
+            data = df.to_dict(orient="records")
+            logger.info(f"Retrieved {len(data)} SSE summary records")
+            return data
+        except Exception as e:
+            logger.error(f"Error fetching SSE summary: {e}")
+            raise Exception("Failed to retrieve SSE summary data")
+
     async def stock_exists(self, stock_code: str) -> bool:
         """Check if stock exists in database"""
         try:

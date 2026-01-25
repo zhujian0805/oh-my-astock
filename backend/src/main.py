@@ -91,7 +91,8 @@ async def api_docs():
         "endpoints": {
             "GET /api/health": "Health check endpoint",
             "GET /api/stocks": "Get all available stocks",
-            "GET /api/stocks/{code}/historical": "Get historical data for a stock"
+            "GET /api/stocks/{code}/historical": "Get historical data for a stock",
+            "GET /api/market/sse-summary": "Get Shanghai Stock Exchange summary data"
         },
         "documentation": "See README.md for detailed API documentation"
     }
