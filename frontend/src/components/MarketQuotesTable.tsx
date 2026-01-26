@@ -10,6 +10,7 @@ const MarketQuotesTable: React.FC = () => {
   const [data, setData] = useState<MarketQuotesResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchMarketQuotes();
@@ -40,6 +41,17 @@ const MarketQuotesTable: React.FC = () => {
       return `${(volume / 10000).toFixed(1)}万`;
     }
     return volume.toString();
+  };
+
+  const formatTurnover = (turnover?: number): string => {
+    if (!turnover) return '--';
+    if (turnover >= 100000000) {
+      return `${(turnover / 100000000).toFixed(2)}亿`;
+    }
+    if (turnover >= 10000) {
+      return `${(turnover / 10000).toFixed(1)}万`;
+    }
+    return turnover.toString();
   };
 
   const formatChange = (change?: number | null): { text: string; className: string } => {
@@ -111,16 +123,28 @@ const MarketQuotesTable: React.FC = () => {
                 最新价
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                均价
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 涨跌额
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 涨跌幅
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" colSpan={2}>
-                卖盘 (5档)
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                最高
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" colSpan={2}>
-                买盘 (5档)
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                最低
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                今开
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                昨收
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" colSpan={4}>
+                买卖盘
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 成交量
@@ -128,23 +152,57 @@ const MarketQuotesTable: React.FC = () => {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                 成交额
               </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                换手率
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                量比
+              </th>
+            </tr>
+            <tr>
+              <th colSpan={9}></th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" colSpan={2}>
+                卖盘
+              </th>
+              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider" colSpan={2}>
+                买盘
+              </th>
+              <th colSpan={4}></th>
             </tr>
           </thead>
           <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {data.quotes.map((quote) => (
               <tr key={quote.stock_code} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {quote.stock_name || quote.stock_code}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {quote.stock_code}
+                  <div className="flex items-center">
+                    <button
+                      onClick={() => toggleRowExpansion(quote.stock_code)}
+                      className="mr-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                    >
+                      <svg
+                        className={`w-4 h-4 transform transition-transform ${expandedRows.has(quote.stock_code) ? 'rotate-90' : ''}`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {quote.stock_name || quote.stock_code}
+                      </div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">
+                        {quote.stock_code}
+                      </div>
                     </div>
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {formatPrice(quote.latest_price)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {formatPrice(quote.average_price)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                   <span className={formatChange(quote.change_amount).className}>
@@ -156,14 +214,26 @@ const MarketQuotesTable: React.FC = () => {
                     {quote.change_percent ? `${formatChange(quote.change_percent).text}%` : '--'}
                   </span>
                 </td>
-                {/* Ask prices and volumes */}
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 dark:text-green-400">
+                  {formatPrice(quote.high)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600 dark:text-red-400">
+                  {formatPrice(quote.low)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {formatPrice(quote.open)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  {formatPrice(quote.previous_close)}
+                </td>
+                {/* Ask levels (sell) */}
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {formatPrice(quote.ask_price_1)}
                 </td>
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                   {formatVolume(quote.ask_volume_1)}
                 </td>
-                {/* Bid prices and volumes */}
+                {/* Bid levels (buy) */}
                 <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                   {formatPrice(quote.bid_price_1)}
                 </td>
@@ -174,9 +244,83 @@ const MarketQuotesTable: React.FC = () => {
                   {formatVolume(quote.volume)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
-                  {quote.turnover ? `${(quote.turnover / 100000000).toFixed(2)}亿` : '--'}
+                  {formatTurnover(quote.turnover)}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {quote.turnover_rate ? `${quote.turnover_rate.toFixed(2)}%` : '--'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
+                  {quote.volume_ratio ? quote.volume_ratio.toFixed(2) : '--'}
                 </td>
               </tr>
+              {expandedRows.has(quote.stock_code) && (
+                <tr key={`${quote.stock_code}-expanded`} className="bg-gray-50 dark:bg-gray-700">
+                  <td colSpan={18} className="px-6 py-4">
+                    <div className="space-y-4">
+                      {/* Full Order Book */}
+                      <div>
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">完整买卖盘 (5档)</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Ask Orders (Sell) */}
+                          <div>
+                            <h5 className="text-xs font-medium text-red-600 dark:text-red-400 mb-2">卖盘 (卖出)</h5>
+                            <div className="space-y-1">
+                              {[1, 2, 3, 4, 5].map(level => {
+                                const price = (quote as any)[`ask_price_${level}`];
+                                const volume = (quote as any)[`ask_volume_${level}`];
+                                return (
+                                  <div key={level} className="flex justify-between text-xs">
+                                    <span className="text-gray-600 dark:text-gray-400">卖{level}:</span>
+                                    <span className="text-gray-900 dark:text-white">{formatPrice(price)}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{formatVolume(volume)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          {/* Bid Orders (Buy) */}
+                          <div>
+                            <h5 className="text-xs font-medium text-green-600 dark:text-green-400 mb-2">买盘 (买入)</h5>
+                            <div className="space-y-1">
+                              {[1, 2, 3, 4, 5].map(level => {
+                                const price = (quote as any)[`bid_price_${level}`];
+                                const volume = (quote as any)[`bid_volume_${level}`];
+                                return (
+                                  <div key={level} className="flex justify-between text-xs">
+                                    <span className="text-gray-600 dark:text-gray-400">买{level}:</span>
+                                    <span className="text-gray-900 dark:text-white">{formatPrice(price)}</span>
+                                    <span className="text-gray-500 dark:text-gray-400">{formatVolume(volume)}</span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Additional Market Data */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">涨停价:</span>
+                          <span className="ml-1 text-red-600 dark:text-red-400">{formatPrice(quote.limit_up)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">跌停价:</span>
+                          <span className="ml-1 text-green-600 dark:text-green-400">{formatPrice(quote.limit_down)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">外盘量:</span>
+                          <span className="ml-1 text-gray-900 dark:text-white">{formatVolume(quote.external_volume)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600 dark:text-gray-400">内盘量:</span>
+                          <span className="ml-1 text-gray-900 dark:text-white">{formatVolume(quote.internal_volume)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              )}
             ))}
           </tbody>
         </table>
