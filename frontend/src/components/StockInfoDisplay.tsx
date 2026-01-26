@@ -4,25 +4,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-interface StockInfoData {
-  stock_code: string;
-  data: Record<string, string>;
-  source_status: {
-    em_api: 'success' | 'failed';
-    xq_api: 'success' | 'failed';
-  };
-  timestamp: string;
-  cache_status: 'fresh' | 'cached' | 'stale';
-}
+import { stockInfoApi, StockInfoResponse } from '../services/stockInfoApi';
 
 interface StockInfoDisplayProps {
   stockCode: string;
 }
 
 const StockInfoDisplay: React.FC<StockInfoDisplayProps> = ({ stockCode }) => {
-  const [data, setData] = useState<StockInfoData | null>(null);
+  const [data, setData] = useState<StockInfoResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -37,18 +26,10 @@ const StockInfoDisplay: React.FC<StockInfoDisplayProps> = ({ stockCode }) => {
     setError(null);
 
     try {
-      const response = await axios.get(`/api/v1/stocks/${stockCode}/info`);
-      setData(response.data);
+      const response = await stockInfoApi.getStockInfo(stockCode);
+      setData(response);
     } catch (err: any) {
-      if (err.response?.status === 404) {
-        setError('未找到该股票信息');
-      } else if (err.response?.status === 400) {
-        setError('股票代码格式错误');
-      } else if (err.response?.status === 429) {
-        setError('请求过于频繁，请稍后再试');
-      } else {
-        setError('获取股票信息失败，请稍后重试');
-      }
+      setError(err.message || '获取股票信息失败，请稍后重试');
       console.error('Error fetching stock info:', err);
     } finally {
       setLoading(false);

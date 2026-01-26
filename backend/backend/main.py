@@ -7,11 +7,17 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from .config import settings
-from .database import db_service
-from .routers import stocks
-from .routers import stock_info_router
-from .routers import market_quotes_router
+import os
+import sys
+
+# Add paths for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
+
+from config import settings
+from database import db_service
+from routers import stocks
+from routers import stock_info_router
+from routers import market_quotes_router
 
 # Configure logging
 logging.basicConfig(

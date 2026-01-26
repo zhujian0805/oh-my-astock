@@ -85,8 +85,8 @@ stocklib fetch-stocks --default-db # Fetch stock data
 
 ## Recent Changes
 - 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)
+- 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)
 - 001-stock-individual-info: Added Python 3.10+ (backend), TypeScript/React (frontend) + akshare >= 1.10.0 (Chinese stock APIs), FastAPI/Pydantic (backend), React/Vite/Tailwind CSS (frontend), DuckDB >= 0.8.0 (database)
-- 001-stock-individual-info: Added Python 3.10+ + akshare >= 1.10.0, FastAPI/Pydantic, React/TypeScript/Tailwind CSS
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

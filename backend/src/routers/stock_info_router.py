@@ -8,26 +8,17 @@ import re
 from typing import Dict
 import datetime
 from fastapi import APIRouter, HTTPException, status
-from pydantic import BaseModel, Field
 from ..services.stock_info_service import StockInfoService
-
-logger = logging.getLogger(__name__)
+# from ..models.stock_info import StockInfoResponse
 
 router = APIRouter()
+
+logger = logging.getLogger(__name__)
 service = StockInfoService()
 
 
-class StockInfoResponse(BaseModel):
-    """Stock information response model."""
-    stock_code: str = Field(..., description="The 6-digit stock code requested")
-    data: Dict[str, str] = Field(..., description="Merged stock information as key-value pairs")
-    source_status: Dict[str, str] = Field(..., description="Status of each data source")
-    timestamp: str = Field(..., description="When the data was last fetched")
-    cache_status: str = Field(..., description="Indicates if data is fresh, cached, or stale")
-
-
-@router.get("/stocks/{stock_code}/info", response_model=StockInfoResponse)
-async def get_stock_info(stock_code: str) -> StockInfoResponse:
+@router.get("/stocks/{stock_code}/info")  # response_model=StockInfoResponse
+async def get_stock_info(stock_code: str):  # -> StockInfoResponse:
     """
     Get merged individual stock information
 
@@ -61,7 +52,7 @@ async def get_stock_info(stock_code: str) -> StockInfoResponse:
             )
 
         logger.info(f"Successfully returned stock info for {stock_code}")
-        return StockInfoResponse(**result)
+        return result  # StockInfoResponse(**result)
 
     except ValueError as e:
         # Handle invalid stock codes (wrong exchange prefix)

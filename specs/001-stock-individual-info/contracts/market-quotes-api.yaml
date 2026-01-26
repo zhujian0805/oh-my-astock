@@ -1,0 +1,278 @@
+openapi: 3.0.1
+info:
+  title: Market Quotes API
+  description: API for retrieving current market bid-ask quotes and trading data
+  version: 1.0.0
+  contact:
+    name: oh-my-astock Development Team
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.oh-my-astock.com
+    description: Production server
+
+paths:
+  /api/v1/market-quotes:
+    get:
+      summary: Get current market quotes for stocks
+      description: Retrieve current bid-ask prices and trading data for stocks using East Money API
+      operationId: getMarketQuotes
+      parameters:
+        - name: stocks
+          in: query
+          required: false
+          description: Comma-separated list of 6-digit stock codes (e.g., 000001,600000,300001). If not provided, returns quotes for default popular stocks.
+          schema:
+            type: string
+            example: "000001,600000,300001"
+      responses:
+        '200':
+          description: Successful response with market quotes data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketQuotesResponse'
+              example:
+                quotes:
+                  - stock_code: "000001"
+                    stock_name: "平安银行"
+                    bid_price_1: 10.50
+                    bid_volume_1: 1000
+                    ask_price_1: 10.52
+                    ask_volume_1: 800
+                    latest_price: 10.51
+                    change_percent: 0.85
+                    volume: 5000000
+                    data_source: "east_money"
+                    last_updated: "2026-01-26T10:30:00Z"
+                  - stock_code: "600000"
+                    stock_name: "浦发银行"
+                    bid_price_1: 7.85
+                    bid_volume_1: 2000
+                    ask_price_1: 7.87
+                    ask_volume_1: 1500
+                    latest_price: 7.86
+                    change_percent: -0.25
+                    volume: 3200000
+                    data_source: "east_money"
+                    last_updated: "2026-01-26T10:30:00Z"
+                metadata:
+                  total_quotes: 2
+                  last_updated: "2026-01-26T10:30:00Z"
+                  data_source: "east_money"
+        '400':
+          description: Invalid stock codes in request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid stock codes"
+                message: "Stock codes must be 6 digits each: invalid_code"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve market quotes"
+
+components:
+  schemas:
+    MarketQuote:
+      type: object
+      required:
+        - stock_code
+        - data_source
+        - last_updated
+      properties:
+        stock_code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: 6-digit stock code
+          example: "000001"
+        stock_name:
+          type: string
+          description: Stock name in Chinese
+          example: "平安银行"
+        # Bid prices and volumes (5 levels)
+        bid_price_1:
+          type: number
+          format: float
+          description: Best bid price level 1
+          example: 10.50
+        bid_volume_1:
+          type: integer
+          description: Bid volume at level 1
+          example: 1000
+        bid_price_2:
+          type: number
+          format: float
+          description: Bid price level 2
+          example: 10.48
+        bid_volume_2:
+          type: integer
+          description: Bid volume at level 2
+          example: 800
+        bid_price_3:
+          type: number
+          format: float
+          description: Bid price level 3
+          example: 10.46
+        bid_volume_3:
+          type: integer
+          description: Bid volume at level 3
+          example: 600
+        bid_price_4:
+          type: number
+          format: float
+          description: Bid price level 4
+          example: 10.44
+        bid_volume_4:
+          type: integer
+          description: Bid volume at level 4
+          example: 400
+        bid_price_5:
+          type: number
+          format: float
+          description: Bid price level 5
+          example: 10.42
+        bid_volume_5:
+          type: integer
+          description: Bid volume at level 5
+          example: 200
+        # Ask prices and volumes (5 levels)
+        ask_price_1:
+          type: number
+          format: float
+          description: Best ask price level 1
+          example: 10.52
+        ask_volume_1:
+          type: integer
+          description: Ask volume at level 1
+          example: 800
+        ask_price_2:
+          type: number
+          format: float
+          description: Ask price level 2
+          example: 10.54
+        ask_volume_2:
+          type: integer
+          description: Ask volume at level 2
+          example: 600
+        ask_price_3:
+          type: number
+          format: float
+          description: Ask price level 3
+          example: 10.56
+        ask_volume_3:
+          type: integer
+          description: Ask volume at level 3
+          example: 400
+        ask_price_4:
+          type: number
+          format: float
+          description: Ask price level 4
+          example: 10.58
+        ask_volume_4:
+          type: integer
+          description: Ask volume at level 4
+          example: 200
+        ask_price_5:
+          type: number
+          format: float
+          description: Ask price level 5
+          example: 10.60
+        ask_volume_5:
+          type: integer
+          description: Ask volume at level 5
+          example: 100
+        # Market data
+        latest_price:
+          type: number
+          format: float
+          description: Latest transaction price
+          example: 10.51
+        change_amount:
+          type: number
+          format: float
+          description: Price change from previous close
+          example: 0.08
+        change_percent:
+          type: number
+          format: float
+          description: Percentage change from previous close
+          example: 0.85
+        volume:
+          type: integer
+          description: Total trading volume
+          example: 5000000
+        turnover:
+          type: number
+          format: float
+          description: Total turnover amount
+          example: 52550000.00
+        # Metadata
+        data_source:
+          type: string
+          description: API source identifier
+          example: "east_money"
+        last_updated:
+          type: string
+          format: date-time
+          description: Timestamp of last data fetch
+          example: "2026-01-26T10:30:00Z"
+        error:
+          type: string
+          description: Error message if data retrieval failed
+          example: null
+
+    MarketQuotesResponse:
+      type: object
+      required:
+        - quotes
+        - metadata
+      properties:
+        quotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketQuote'
+          description: Array of market quote data for requested stocks
+        metadata:
+          type: object
+          required:
+            - total_quotes
+            - last_updated
+            - data_source
+          properties:
+            total_quotes:
+              type: integer
+              description: Number of quotes returned
+              example: 2
+            last_updated:
+              type: string
+              format: date-time
+              description: Timestamp when data was last fetched
+              example: "2026-01-26T10:30:00Z"
+            data_source:
+              type: string
+              description: Primary API source used
+              example: "east_money"
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type identifier
+          example: "Invalid stock codes"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Stock codes must be 6 digits each: invalid_code"

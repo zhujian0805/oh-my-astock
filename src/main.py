@@ -7,13 +7,14 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from .config import settings
-from .database import db_service
-from .routers import stocks
+import config
+from database import db_service
+from routers import stocks
+from routers import market_quotes_router
 
 # Configure logging
 logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper()),
+    level=getattr(logging, config.settings.log_level.upper()),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -47,7 +48,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.cors_origins,
+    allow_origins=config.settings.cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
@@ -73,6 +74,7 @@ async def health_check():
 
 # Include routers
 app.include_router(stocks.router, prefix="/api", tags=["stocks"])
+app.include_router(market_quotes_router.router, prefix="/api/v1", tags=["market-quotes"])
 
 @app.get("/api/docs")
 async def api_docs():
@@ -94,6 +96,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=settings.port,
-        reload=settings.debug
+        port=config.settings.port,
+        reload=config.settings.debug
     )

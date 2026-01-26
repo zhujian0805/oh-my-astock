@@ -1,4 +1,4 @@
-# Implementation Plan: Add Individual Stock Information Menu Item
+# Implementation Plan: Add Individual Stock Information and Market Quotes
 
 **Branch**: `001-stock-individual-info` | **Date**: 2026-01-26 | **Spec**: /home/jzhu/oh-my-astock/specs/001-stock-individual-info/spec.md
 **Input**: Feature specification from `/specs/001-stock-individual-info/spec.md`
@@ -7,35 +7,41 @@
 
 ## Summary
 
-Add a menu item "个股信息" under "股市数据" that displays comprehensive individual stock information by merging data from two APIs (East Money and Xueqiu). The feature includes a backend API that fetches and merges stock data, and a frontend dropdown interface for stock selection with flexible grid layout.
+Add comprehensive stock market data functionality with two menu items under "股市数据": 个股信息 (individual stock details merged from East Money and Xueqiu APIs) and 行情报价 (market quotes/bid-ask data from East Money API). The feature includes backend API endpoints, frontend pages with flexible layouts, and comprehensive error handling for API failures.
 
 ## Technical Context
+
+<!--
+  ACTION REQUIRED: Replace the content in this section with the technical details
+  for the project. The structure here is presented in advisory capacity to guide
+  the iteration process.
+-->
 
 **Language/Version**: Python 3.10+ (match statements, modern f-strings required)
 **Primary Dependencies**: FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)
 **Storage**: DuckDB >= 0.8.0 (existing database, no new tables needed)
-**Testing**: pytest >= 7.0.0 (testing framework)
+**Testing**: pytest >= 7.0.0 (backend), Vitest (frontend)
 **Target Platform**: Web application (Linux server)
 **Project Type**: Web application (frontend + backend)
-**Performance Goals**: Stock information loads within 3 seconds of selection
-**Constraints**: Show partial data with error indication when Xueqiu API fails
-**Scale/Scope**: Individual stock information display for selected stocks
+**Performance Goals**: Individual stock info within 3 seconds, market quotes within 2 seconds
+**Constraints**: Show partial data with error indication when Xueqiu API fails for stock info
+**Scale/Scope**: Two menu items displaying stock market data for selected stocks
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-✅ **PASS** - Feature adheres to all core principles post-design:
+✅ **PASS** - Expanded feature design adheres to all core principles:
 
-**I. Modular Architecture First**: Design maintains clear separation with backend service layer for API integration and frontend component layer for UI display.
+**I. Modular Architecture First**: Extended design maintains clear separation with dedicated services (StockInfoService, MarketQuotesService) and routers for different data types, following established layered structure.
 
-**II. Test-First Discipline**: Design includes contract tests for API endpoints and integration tests for data merging functionality.
+**II. Test-First Discipline**: Design includes comprehensive contract and integration tests for both API endpoints, maintaining the established testing patterns in the codebase.
 
-**III. Database-Centric Design**: No database changes required; existing DuckDB infrastructure sufficient for this feature.
+**III. Database-Centric Design**: No database changes required for either feature; existing DuckDB infrastructure sufficient for external API data serving.
 
-**IV. Performance & Scalability**: 3-second response time requirement aligns with performance guidelines; parallel API calls and error handling designed for reliability.
+**IV. Performance & Scalability**: Both features designed with 2-3 second response times, proper caching, rate limiting, and error handling as established in existing services.
 
-**V. Observable & Debuggable Systems**: API contract includes error responses and source status indicators; design supports debug logging and structured error messages.
+**V. Observable & Debuggable Systems**: Both backend services include proper logging for API calls with context (stock codes, API endpoints); frontend components include loading states and error display with clear user feedback.
 
 ## Project Structure
 
@@ -63,21 +69,21 @@ specs/[###-feature]/
 backend/
 ├── src/
 │   ├── models/
-│   ├── services/          # NEW: stock_info_service.py (merge API data)
-│   ├── routers/           # NEW: stock_info_router.py (API endpoint)
+│   ├── services/          # NEW: stock_info_service.py, market_quotes_service.py (API calls and data processing)
+│   ├── routers/           # NEW: stock_info_router.py, market_quotes_router.py (API endpoints)
 │   └── lib/
 └── tests/
 
 frontend/
 ├── src/
-│   ├── components/        # NEW: StockInfoDisplay.tsx (info display)
-│   ├── pages/             # NEW: IndividualStockInfo.tsx (page component)
-│   ├── services/          # Update: stock API service
-│   └── config/            # Update: menu.ts (add 个股信息 item)
+│   ├── components/        # NEW: StockInfoDisplay.tsx, MarketQuotesTable.tsx (data visualization)
+│   ├── pages/             # NEW: IndividualStockInfo.tsx, MarketQuotesPage.tsx (page components)
+│   ├── services/          # Update: stock API service client
+│   └── config/            # Update: menu.ts (add 行情报价 item)
 └── tests/
 ```
 
-**Structure Decision**: Web application structure (Option 2) selected as feature requires both backend API development and frontend UI components for the individual stock information display.
+**Structure Decision**: Web application structure selected as feature requires both backend API development (two new services/endpoints) and frontend UI components (two new pages with table/grid displays) for comprehensive stock market data functionality.
 
 ## Complexity Tracking
 

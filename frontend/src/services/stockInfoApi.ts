@@ -12,6 +12,8 @@ export interface StockInfoResponse {
     em_api: 'success' | 'failed';
     xq_api: 'success' | 'failed';
   };
+  timestamp: string;
+  cache_status: string;
 }
 
 export interface StockInfoError {
