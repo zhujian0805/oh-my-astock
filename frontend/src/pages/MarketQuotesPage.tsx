@@ -32,6 +32,14 @@ const MarketQuotesPage: React.FC = () => {
 
   const [availableStocks, setAvailableStocks] = useState<StockListItem[]>([]);
   const [stocksLoading, setStocksLoading] = useState(false);
+  const [stockLimit, setStockLimit] = useState(() => {
+    try {
+      const stored = localStorage.getItem('market-quotes-stock-limit');
+      return stored ? parseInt(stored, 10) : 1000;
+    } catch {
+      return 1000;
+    }
+  });
 
   // Auto-refresh state
   const [isAutoRefreshEnabled, setIsAutoRefreshEnabled] = useState(() => {
@@ -59,7 +67,7 @@ const MarketQuotesPage: React.FC = () => {
     const loadAvailableStocks = async () => {
       setStocksLoading(true);
       try {
-        const response = await fetch('/api/stocks?limit=1000'); // Get up to 1000 stocks
+        const response = await fetch(`/api/stocks?limit=${stockLimit}`); // Get stocks based on limit
         const data = await response.json();
         // Map Stock[] to StockListItem[] by adding exchange field
         const stocksWithExchange: StockListItem[] = data.data.map((stock: { code: string; name: string }) => ({
@@ -94,7 +102,7 @@ const MarketQuotesPage: React.FC = () => {
     };
 
     loadAvailableStocks();
-  }, []);
+  }, [stockLimit]); // Re-run when stockLimit changes
 
   // Fetch market data
   const fetchMarketData = useCallback(async () => {
@@ -155,6 +163,12 @@ const MarketQuotesPage: React.FC = () => {
     localStorage.setItem(STORAGE_AUTO_REFRESH, JSON.stringify(newValue));
   }, [isAutoRefreshEnabled]);
 
+  // Handle stock limit change
+  const handleStockLimitChange = useCallback((limit: number) => {
+    setStockLimit(limit);
+    localStorage.setItem('market-quotes-stock-limit', limit.toString());
+  }, []);
+
   // Handle refresh interval change
   const handleIntervalChange = useCallback((interval: number) => {
     setRefreshInterval(interval);
@@ -170,12 +184,33 @@ const MarketQuotesPage: React.FC = () => {
       <div className="space-y-6">
         {/* Stock Selector */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-          <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
-            股票选择
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">
-            选择您想要关注的股票，系统将显示其实时行情数据
-          </p>
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+                股票选择
+              </h2>
+              <p className="text-gray-600 dark:text-gray-400 text-sm">
+                选择您想要关注的股票，系统将显示其实时行情数据
+              </p>
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className="text-sm text-gray-600 dark:text-gray-400">
+                列表大小:
+              </label>
+              <select
+                value={stockLimit}
+                onChange={(e) => handleStockLimitChange(parseInt(e.target.value, 10))}
+                className="px-3 py-1 text-sm bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value={100}>100</option>
+                <option value={500}>500</option>
+                <option value={1000}>1000</option>
+                <option value={2000}>2000</option>
+                <option value={5000}>5000</option>
+                <option value={10000}>10000</option>
+              </select>
+            </div>
+          </div>
           <MultiStockSelector
             stocks={availableStocks}
             selectedStocks={selectedStocks}
