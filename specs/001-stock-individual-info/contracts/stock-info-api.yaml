@@ -1,91 +1,239 @@
 openapi: 3.0.1
 info:
   title: Individual Stock Information API
-  description: API for retrieving merged individual stock information
+  description: API for retrieving comprehensive individual stock information merged from East Money and Xueqiu sources
   version: 1.0.0
+  contact:
+    name: oh-my-astock Development Team
+
 servers:
-  - url: /api/v1
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.oh-my-astock.com
+    description: Production server
+
 paths:
-  /stocks/{stock_code}/info:
+  /api/v1/stock-info/{stock_code}:
     get:
-      summary: Get merged individual stock information
-      description: Retrieves comprehensive stock information by merging data from East Money and Xueqiu APIs
+      summary: Get individual stock information
+      description: Retrieve comprehensive stock information by merging data from East Money and Xueqiu APIs
+      operationId: getStockInfo
       parameters:
         - name: stock_code
           in: path
           required: true
+          description: 6-digit stock code (e.g., 601127)
           schema:
             type: string
             pattern: '^[0-9]{6}$'
-            example: "000001"
-          description: 6-digit stock code
+            example: "601127"
       responses:
         '200':
-          description: Successful response with merged stock data
+          description: Successful response with merged stock information
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  stock_code:
-                    type: string
-                    example: "000001"
-                  data:
-                    type: object
-                    additionalProperties:
-                      type: string
-                    description: Merged key-value pairs from both APIs
-                    example:
-                      "最新": "7.05"
-                      "股票代码": "000001"
-                      "org_name_cn": "平安银行股份有限公司"
-                  source_status:
-                    type: object
-                    properties:
-                      em_api:
-                        type: string
-                        enum: ["success", "failed"]
-                      xq_api:
-                        type: string
-                        enum: ["success", "failed"]
-                    description: Status of each data source
+                $ref: '#/components/schemas/StockInfoResponse'
+              example:
+                code: "601127"
+                name: "中国神华"
+                symbol: "SH601127"
+                market: "沪A"
+                industry: "煤炭开采"
+                current_price: 25.68
+                change_percent: 2.34
+                volume: 12345678
+                total_market_cap: 456789.12
+                circulating_market_cap: 345678.90
+                pe_ratio: 12.34
+                pb_ratio: 1.56
+                last_updated: "2026-01-26T10:30:00Z"
+                data_sources:
+                  east_money: true
+                  xueqiu: true
         '400':
           description: Invalid stock code format
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Invalid stock code format"
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Invalid stock code format"
+                message: "Stock code must be exactly 6 digits"
         '404':
-          description: Stock not found or data unavailable
+          description: Stock not found
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Stock data not available"
-        '429':
-          description: Rate limit exceeded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Rate limit exceeded, please retry later"
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Stock not found"
+                message: "No data available for stock code 999999"
         '500':
           description: Internal server error
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                    example: "Internal server error"
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Internal server error"
+                message: "Failed to retrieve stock information"
+
+components:
+  schemas:
+    StockInfoResponse:
+      type: object
+      required:
+        - code
+        - symbol
+        - data_sources
+        - last_updated
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: 6-digit stock code
+          example: "601127"
+        name:
+          type: string
+          description: Stock name in Chinese
+          example: "中国神华"
+        symbol:
+          type: string
+          pattern: '^(SH|SZ)[0-9]{6}$'
+          description: Prefixed stock symbol for Xueqiu API
+          example: "SH601127"
+        # East Money fields
+        market:
+          type: string
+          description: Market identifier
+          example: "沪A"
+        industry:
+          type: string
+          description: Industry classification
+          example: "煤炭开采"
+        total_market_cap:
+          type: number
+          format: float
+          description: Total market capitalization
+          example: 456789.12
+        circulating_market_cap:
+          type: number
+          format: float
+          description: Circulating market capitalization
+          example: 345678.90
+        pe_ratio:
+          type: number
+          format: float
+          description: Price-to-earnings ratio
+          example: 12.34
+        pb_ratio:
+          type: number
+          format: float
+          description: Price-to-book ratio
+          example: 1.56
+        roe:
+          type: number
+          format: float
+          description: Return on equity
+          example: 8.75
+        gross_margin:
+          type: number
+          format: float
+          description: Gross profit margin
+          example: 25.6
+        net_margin:
+          type: number
+          format: float
+          description: Net profit margin
+          example: 12.3
+        # Xueqiu fields
+        current_price:
+          type: number
+          format: float
+          description: Current stock price
+          example: 25.68
+        change_percent:
+          type: number
+          format: float
+          description: Daily price change percentage
+          example: 2.34
+        volume:
+          type: integer
+          description: Trading volume
+          example: 12345678
+        turnover:
+          type: number
+          format: float
+          description: Turnover amount
+          example: 987654.32
+        high_52w:
+          type: number
+          format: float
+          description: 52-week high price
+          example: 35.80
+        low_52w:
+          type: number
+          format: float
+          description: 52-week low price
+          example: 18.50
+        market_cap:
+          type: number
+          format: float
+          description: Market capitalization
+          example: 456789.12
+        eps:
+          type: number
+          format: float
+          description: Earnings per share
+          example: 2.08
+        dividend_yield:
+          type: number
+          format: float
+          description: Dividend yield percentage
+          example: 3.25
+        # Metadata
+        last_updated:
+          type: string
+          format: date-time
+          description: Timestamp of last data fetch
+          example: "2026-01-26T10:30:00Z"
+        data_sources:
+          type: object
+          description: Status of each API data source
+          required:
+            - east_money
+            - xueqiu
+          properties:
+            east_money:
+              type: boolean
+              description: Whether East Money API data was successfully retrieved
+              example: true
+            xueqiu:
+              type: boolean
+              description: Whether Xueqiu API data was successfully retrieved
+              example: true
+          example:
+            east_money: true
+            xueqiu: false
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages for failed API calls
+          example: ["Xueqiu API temporarily unavailable"]
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error type identifier
+          example: "Invalid stock code format"
+        message:
+          type: string
+          description: Human-readable error message
+          example: "Stock code must be exactly 6 digits"

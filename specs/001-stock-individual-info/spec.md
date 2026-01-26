@@ -32,21 +32,30 @@ As a user, I want to access detailed information about a specific stock so that 
 - How does the system handle invalid or non-existent stock codes?
 - What occurs when the backend API is temporarily unavailable?
 
+When the Xueqiu API fails, the system MUST show partial data from the East Money API and clearly indicate that the Xueqiu API failed to load data.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: System MUST provide a menu item named "个股信息" under the "股市数据" section
-- **FR-002**: Backend MUST call the stock_individual_info_em API to retrieve detailed stock information
-- **FR-003**: Backend MUST call the stock_individual_basic_info_xq API to retrieve basic stock information
+- **FR-002**: Backend MUST call the stock_individual_info_em API to retrieve detailed stock information using 6-digit stock codes (e.g., "601127")
+- **FR-003**: Backend MUST call the stock_individual_basic_info_xq API to retrieve basic stock information using prefixed symbols (e.g., "SH601127" for Shanghai stocks starting with '6', "SZ000001" for Shenzhen stocks starting with '0' or '3')
 - **FR-004**: Backend MUST merge responses from stock_individual_info_em and stock_individual_basic_info_xq into a single data structure
 - **FR-005**: Backend MUST provide an API endpoint that returns the merged individual stock data
 - **FR-006**: Frontend MUST display a dropdown menu allowing users to select stocks
-- **FR-007**: Frontend MUST display the merged stock information when a stock is selected from the dropdown
+- **FR-008**: Frontend MUST use a flexible grid system layout that stretches content based on available screen space for optimal display of stock information
 
 ### Key Entities *(include if feature involves data)*
 
 - **Stock**: Represents an individual stock with a unique code, containing merged basic and detailed information attributes without implementation details
+
+## Clarifications
+
+### Session 2026-01-26
+- Q: API Symbol Format for stock_individual_basic_info_xq → A: API requires prefixed symbols like "SH601127", "SZ000001" - matches akshare documentation and examples
+- Q: How should the stock information page layout be structured to be more stretched? → A: Flexible grid system
+- Q: What should happen when the Xueqiu API fails? → A: Show partial data with error indication
 
 ## Success Criteria *(mandatory)*
 

@@ -3,8 +3,8 @@ Stock Information Service
 Handles retrieval and merging of individual stock data from multiple APIs
 """
 
-import logging
 from typing import Dict, List, Optional, Tuple
+import logging
 import akshare as ak
 from ..lib.rate_limiter import rate_limiter
 from ..lib.cache import api_cache

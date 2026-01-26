@@ -6,37 +6,24 @@ FastAPI router for stock information endpoints.
 
 import logging
 from typing import Dict, List, Optional
+import datetime
 
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-logger = logging.getLogger(__name__)
+from ..services.stock_info_service import StockInfoService
 
-# Import will be added when backend service is implemented
-# from ..services.stock_info_service import StockInfoService
+logger = logging.getLogger(__name__)
+service = StockInfoService()
 
 
 class StockInfoResponse(BaseModel):
     """Stock information response model."""
-    stock_code: str = Field(..., description="Stock code")
-    company_name: str = Field(..., description="Company name")
-    industry: Optional[str] = Field(None, description="Industry classification")
-    sector: Optional[str] = Field(None, description="Sector classification")
-    market: str = Field(..., description="Market (SH/SZ)")
-    listing_date: Optional[str] = Field(None, description="IPO date (YYYY-MM-DD)")
-    total_shares: Optional[int] = Field(None, description="Total shares outstanding")
-    circulating_shares: Optional[int] = Field(None, description="Circulating shares")
-    market_cap: Optional[float] = Field(None, description="Market capitalization (CNY)")
-    pe_ratio: Optional[float] = Field(None, description="Price-to-earnings ratio")
-    pb_ratio: Optional[float] = Field(None, description="Price-to-book ratio")
-    dividend_yield: Optional[float] = Field(None, description="Dividend yield (%)")
-    roe: Optional[float] = Field(None, description="Return on equity (%)")
-    roa: Optional[float] = Field(None, description="Return on assets (%)")
-    net_profit: Optional[float] = Field(None, description="Net profit (CNY)")
-    total_assets: Optional[float] = Field(None, description="Total assets (CNY)")
-    total_liability: Optional[float] = Field(None, description="Total liability (CNY)")
-    created_at: str = Field(..., description="Record creation timestamp")
-    updated_at: str = Field(..., description="Last update timestamp")
+    stock_code: str = Field(..., description="The 6-digit stock code requested")
+    data: Dict[str, str] = Field(..., description="Merged stock information as key-value pairs")
+    source_status: Dict[str, str] = Field(..., description="Status of each data source")
+    timestamp: str = Field(..., description="When the data was last fetched")
+    cache_status: str = Field(..., description="Indicates if data is fresh, cached, or stale")
 
 
 class BatchStockInfoRequest(BaseModel):
@@ -85,20 +72,21 @@ async def get_stock_info(
     Returns merged data from East Money and Xueqiu APIs.
     """
     try:
-        # TODO: Implement actual service call
-        # stock_info = await stock_info_service.get_stock_info(stock_code)
-        # if not stock_info:
-        #     raise HTTPException(status_code=404, detail={
-        #         "error": "Stock not found",
-        #         "code": "STOCK_NOT_FOUND",
-        #         "stock_code": stock_code
-        #     })
+        # Validate stock code format
+        if not stock_code or len(stock_code) != 6 or not stock_code.isdigit():
+            raise HTTPException(status_code=422, detail={
+                "error": "Invalid stock code format",
+                "code": "INVALID_STOCK_CODE",
+                "details": "Stock code must be 6 digits"
+            })
 
-        # For now, return mock data
-        raise HTTPException(status_code=503, detail={
-            "error": "Stock information service not yet implemented",
-            "code": "SERVICE_UNAVAILABLE"
-        })
+        result = service.get_stock_info(stock_code)
+
+        # Add timestamp and cache status to response
+        result["timestamp"] = datetime.datetime.now().isoformat()
+        result["cache_status"] = "fresh"  # TODO: implement proper cache status detection
+
+        return StockInfoResponse(**result)
 
     except HTTPException:
         raise
@@ -106,7 +94,8 @@ async def get_stock_info(
         logger.error(f"Error fetching stock info for {stock_code}: {e}")
         raise HTTPException(status_code=500, detail={
             "error": "Internal server error",
-            "code": "INTERNAL_ERROR"
+            "code": "INTERNAL_ERROR",
+            "details": str(e)
         })
 
 

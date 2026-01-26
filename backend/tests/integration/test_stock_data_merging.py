@@ -120,8 +120,33 @@ class TestStockDataMerging:
 
             # Verify API calls were made
             mock_em.assert_called_once_with(symbol="000001")
-            mock_xq.assert_called_once_with(symbol="000001")
+            mock_xq.assert_called_once_with(symbol="SZ000001")
 
             # Verify cache was checked and set
             mock_cache.get.assert_called_once()
             mock_cache.set.assert_called_once()
+
+    def test_get_prefixed_symbol_shanghai(self, service):
+        """Test Shanghai stock code prefixing"""
+        result = service._get_prefixed_symbol("601127")
+        assert result == "SH601127"
+
+    def test_get_prefixed_symbol_shenzhen_main(self, service):
+        """Test Shenzhen main board stock code prefixing"""
+        result = service._get_prefixed_symbol("000001")
+        assert result == "SZ000001"
+
+    def test_get_prefixed_symbol_shenzhen_gem(self, service):
+        """Test Shenzhen GEM stock code prefixing"""
+        result = service._get_prefixed_symbol("300001")
+        assert result == "SZ300001"
+
+    def test_get_prefixed_symbol_invalid_length(self, service):
+        """Test invalid stock code length"""
+        with pytest.raises(ValueError, match="Invalid stock code format"):
+            service._get_prefixed_symbol("12345")
+
+    def test_get_prefixed_symbol_invalid_start(self, service):
+        """Test invalid stock code starting digit"""
+        with pytest.raises(ValueError, match="Unknown stock exchange"):
+            service._get_prefixed_symbol("999999")

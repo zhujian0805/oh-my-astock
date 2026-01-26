@@ -6,7 +6,9 @@ FastAPI router for individual stock information endpoints
 import logging
 import re
 from typing import Dict
+import datetime
 from fastapi import APIRouter, HTTPException, status
+from pydantic import BaseModel, Field
 from ..services.stock_info_service import StockInfoService
 
 logger = logging.getLogger(__name__)
@@ -15,8 +17,17 @@ router = APIRouter()
 service = StockInfoService()
 
 
-@router.get("/stocks/{stock_code}/info", response_model=Dict)
-async def get_stock_info(stock_code: str) -> Dict:
+class StockInfoResponse(BaseModel):
+    """Stock information response model."""
+    stock_code: str = Field(..., description="The 6-digit stock code requested")
+    data: Dict[str, str] = Field(..., description="Merged stock information as key-value pairs")
+    source_status: Dict[str, str] = Field(..., description="Status of each data source")
+    timestamp: str = Field(..., description="When the data was last fetched")
+    cache_status: str = Field(..., description="Indicates if data is fresh, cached, or stale")
+
+
+@router.get("/stocks/{stock_code}/info", response_model=StockInfoResponse)
+async def get_stock_info(stock_code: str) -> StockInfoResponse:
     """
     Get merged individual stock information
 
@@ -34,9 +45,13 @@ async def get_stock_info(stock_code: str) -> Dict:
     try:
         result = service.get_stock_info(stock_code)
 
+        # Add timestamp and cache status to response
+        result["timestamp"] = datetime.datetime.now().isoformat()
+        result["cache_status"] = "fresh"  # TODO: implement proper cache status detection
+
         # Check if we got any meaningful data
         has_meaningful_data = bool(result["data"]) and any(
-            value != "None" for value in result["data"].values()
+            value and value != "None" for value in result["data"].values()
         )
         if not has_meaningful_data:
             logger.warning(f"No meaningful data found for stock {stock_code}")
@@ -46,8 +61,15 @@ async def get_stock_info(stock_code: str) -> Dict:
             )
 
         logger.info(f"Successfully returned stock info for {stock_code}")
-        return result
+        return StockInfoResponse(**result)
 
+    except ValueError as e:
+        # Handle invalid stock codes (wrong exchange prefix)
+        logger.warning(f"Invalid stock code: {stock_code} - {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Stock data not available"
+        )
     except HTTPException:
         raise
     except Exception as e:

@@ -25,6 +25,9 @@ Auto-generated from all feature plans. Last updated: 2026-01-25
 - DuckDB >= 0.8.0 (single source of truth, no additional storage needed) (001-database-migration-stock-info)
 - Python 3.10+ + akshare >= 1.10.0, FastAPI/Pydantic, React/TypeScript/Tailwind CSS (001-stock-individual-info)
 - DuckDB (existing database, no new tables needed) (001-stock-individual-info)
+- Python 3.10+ (backend), TypeScript/React (frontend) + akshare >= 1.10.0 (Chinese stock APIs), FastAPI/Pydantic (backend), React/Vite/Tailwind CSS (frontend), DuckDB >= 0.8.0 (database) (001-stock-individual-info)
+- Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs) (001-stock-individual-info)
+- DuckDB >= 0.8.0 (existing database, no new tables needed) (001-stock-individual-info)
 
 ## Project Structure
 
@@ -81,9 +84,9 @@ stocklib fetch-stocks --default-db # Fetch stock data
 - **Testing:** Write contract tests for all new features
 
 ## Recent Changes
+- 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)
+- 001-stock-individual-info: Added Python 3.10+ (backend), TypeScript/React (frontend) + akshare >= 1.10.0 (Chinese stock APIs), FastAPI/Pydantic (backend), React/Vite/Tailwind CSS (frontend), DuckDB >= 0.8.0 (database)
 - 001-stock-individual-info: Added Python 3.10+ + akshare >= 1.10.0, FastAPI/Pydantic, React/TypeScript/Tailwind CSS
-- 001-database-migration-stock-info: Added Python 3.10+ (match statements, modern f-strings required) + akshare >= 1.10.0 (Chinese stock API), click >= 8.0.0 (CLI framework), DuckDB >= 0.8.0 (database), pandas (data processing), FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend)
-- 001-calendar-stock-industry: Added Python 3.10+ (backend), TypeScript/React (frontend) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

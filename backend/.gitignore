@@ -1,35 +1,63 @@
-# Node.js
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json
-yarn.lock
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Environment variables
-.env
-.env.local
-.env.*.local
+# Virtual Environment
+.venv/
+venv/
+ENV/
+env/
 
 # Testing
-coverage/
-.nyc_output/
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
 
-# IDE
+# IDEs
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
 Thumbs.db
 
-# Logs
-logs/
-*.log
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
 
-# Build
+# Database files
+*.db
+*.duckdb
+*.duckdb.wal
+
+# Logs
+*.log
+logs/
+
+# Build outputs
 dist/
 build/
