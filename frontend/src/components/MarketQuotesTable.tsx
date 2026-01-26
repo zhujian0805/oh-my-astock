@@ -3,33 +3,23 @@
  * Displays market bid-ask data in a table format
  */
 
-import React, { useState, useEffect } from 'react';
-import { marketQuotesApi, MarketQuotesResponse } from '../services/marketQuotesApi';
+import React, { useState } from 'react';
+import { MarketQuotesResponse } from '../services/marketQuotesApi';
 
-const MarketQuotesTable: React.FC = () => {
-  const [data, setData] = useState<MarketQuotesResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+interface MarketQuotesTableProps {
+  data: MarketQuotesResponse | null;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}
+
+const MarketQuotesTable: React.FC<MarketQuotesTableProps> = ({
+  data,
+  loading,
+  error,
+  onRetry,
+}) => {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-
-  useEffect(() => {
-    fetchMarketQuotes();
-  }, []);
-
-  const fetchMarketQuotes = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await marketQuotesApi.getMarketQuotes();
-      setData(response);
-    } catch (err: any) {
-      setError(err.message || '获取行情数据失败，请稍后重试');
-      console.error('Error fetching market quotes:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatPrice = (price?: number): string => {
     return price ? price.toFixed(2) : '--';
@@ -95,7 +85,7 @@ const MarketQuotesTable: React.FC = () => {
           {error}
         </p>
         <button
-          onClick={fetchMarketQuotes}
+          onClick={onRetry}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
         >
           重试
