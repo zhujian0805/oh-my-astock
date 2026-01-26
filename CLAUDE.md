@@ -28,6 +28,8 @@ Auto-generated from all feature plans. Last updated: 2026-01-25
 - Python 3.10+ (backend), TypeScript/React (frontend) + akshare >= 1.10.0 (Chinese stock APIs), FastAPI/Pydantic (backend), React/Vite/Tailwind CSS (frontend), DuckDB >= 0.8.0 (database) (001-stock-individual-info)
 - Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs) (001-stock-individual-info)
 - DuckDB >= 0.8.0 (existing database, no new tables needed) (001-stock-individual-info)
+- Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs), DuckDB >= 0.8.0 (database) (001-stock-individual-info)
+- DuckDB >= 0.8.0 (file-based SQL database) (001-stock-individual-info)
 
 ## Project Structure
 
@@ -84,9 +86,9 @@ stocklib fetch-stocks --default-db # Fetch stock data
 - **Testing:** Write contract tests for all new features
 
 ## Recent Changes
+- 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs), DuckDB >= 0.8.0 (database)
 - 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)
 - 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)
-- 001-stock-individual-info: Added Python 3.10+ (backend), TypeScript/React (frontend) + akshare >= 1.10.0 (Chinese stock APIs), FastAPI/Pydantic (backend), React/Vite/Tailwind CSS (frontend), DuckDB >= 0.8.0 (database)
 
 <!-- MANUAL ADDITIONS START -->
 <!-- MANUAL ADDITIONS END -->

@@ -1,4 +1,4 @@
-# Implementation Plan: Add Individual Stock Information and Market Quotes
+# Implementation Plan: Add Individual Stock Information Menu Item
 
 **Branch**: `001-stock-individual-info` | **Date**: 2026-01-26 | **Spec**: /home/jzhu/oh-my-astock/specs/001-stock-individual-info/spec.md
 **Input**: Feature specification from `/specs/001-stock-individual-info/spec.md`
@@ -7,41 +7,30 @@
 
 ## Summary
 
-Add comprehensive stock market data functionality with two menu items under "股市数据": 个股信息 (individual stock details merged from East Money and Xueqiu APIs) and 行情报价 (market quotes/bid-ask data from East Money API). The feature includes backend API endpoints, frontend pages with flexible layouts, and comprehensive error handling for API failures.
+Implement menu items for "个股信息" (individual stock information) and "行情报价" (market quotes/bid-ask data) under "股市数据". Backend will merge data from stock_individual_info_em and stock_individual_basic_info_xq APIs using field-level precedence rules, with automatic retry logic for rate limiting. Frontend provides dropdown selection for stocks and table display for quotes. Comprehensive contract and end-to-end testing ensures API reliability and frontend-backend integration.
 
 ## Technical Context
 
-<!--
-  ACTION REQUIRED: Replace the content in this section with the technical details
-  for the project. The structure here is presented in advisory capacity to guide
-  the iteration process.
--->
-
 **Language/Version**: Python 3.10+ (match statements, modern f-strings required)
-**Primary Dependencies**: FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)
-**Storage**: DuckDB >= 0.8.0 (existing database, no new tables needed)
-**Testing**: pytest >= 7.0.0 (backend), Vitest (frontend)
-**Target Platform**: Web application (Linux server)
-**Project Type**: Web application (frontend + backend)
-**Performance Goals**: Individual stock info within 3 seconds, market quotes within 2 seconds
-**Constraints**: Show partial data with error indication when Xueqiu API fails for stock info
-**Scale/Scope**: Two menu items displaying stock market data for selected stocks
+**Primary Dependencies**: FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs), DuckDB >= 0.8.0 (database)
+**Storage**: DuckDB >= 0.8.0 (file-based SQL database)
+**Testing**: pytest >= 7.0.0 (testing framework), contract tests for API interfaces, end-to-end tests for user flows
+**Target Platform**: Linux server (backend), web browser (frontend)
+**Project Type**: web application (frontend + backend)
+**Performance Goals**: Stock info display within 3 seconds, market quotes within 2 seconds
+**Constraints**: 95% success rate for data retrieval, handle API failures gracefully with partial data
+**Scale/Scope**: 4,000+ stocks, thread-safe parallel processing, curated market quotes selection
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-✅ **PASS** - Expanded feature design adheres to all core principles:
-
-**I. Modular Architecture First**: Extended design maintains clear separation with dedicated services (StockInfoService, MarketQuotesService) and routers for different data types, following established layered structure.
-
-**II. Test-First Discipline**: Design includes comprehensive contract and integration tests for both API endpoints, maintaining the established testing patterns in the codebase.
-
-**III. Database-Centric Design**: No database changes required for either feature; existing DuckDB infrastructure sufficient for external API data serving.
-
-**IV. Performance & Scalability**: Both features designed with 2-3 second response times, proper caching, rate limiting, and error handling as established in existing services.
-
-**V. Observable & Debuggable Systems**: Both backend services include proper logging for API calls with context (stock codes, API endpoints); frontend components include loading states and error display with clear user feedback.
+✅ **PASS**: Feature adheres to all constitution principles:
+- Modular Architecture: Backend services layer for API integration, frontend components for UI
+- Test-First Discipline: Contract tests for APIs, end-to-end tests for user flows
+- Database-Centric: DuckDB as single source of truth for stock data
+- Performance Built-In: 3s/2s response times, rate limiting with retry logic
+- Observable Systems: Error handling with user messages, debug logging
 
 ## Project Structure
 
@@ -58,32 +47,53 @@ specs/[###-feature]/
 ```
 
 ### Source Code (repository root)
-<!--
-  ACTION REQUIRED: Replace the placeholder tree below with the concrete layout
-  for this feature. Delete unused options and expand the chosen structure with
-  real paths (e.g., apps/admin, packages/something). The delivered plan must
-  not include Option labels.
--->
 
 ```text
 backend/
 ├── src/
+│   ├── routers/
+│   │   └── stock_info.py          # New: Stock and market quotes API endpoints
+│   ├── services/
+│   │   └── stock_service.py       # New: API integration and data merging
 │   ├── models/
-│   ├── services/          # NEW: stock_info_service.py, market_quotes_service.py (API calls and data processing)
-│   ├── routers/           # NEW: stock_info_router.py, market_quotes_router.py (API endpoints)
+│   │   ├── stock.py               # New: Stock data models
+│   │   └── market_quote.py        # New: Market quote models
 │   └── lib/
-└── tests/
+│       └── api_client.py          # Updated: Rate limiting and retry logic
+├── tests/
+│   ├── contract/
+│   │   └── test_stock_api.py      # New: API contract tests
+│   └── integration/
+│       └── test_stock_workflow.py # New: Data merging integration tests
+└── requirements.txt                # Updated: akshare >= 1.10.0
 
 frontend/
 ├── src/
-│   ├── components/        # NEW: StockInfoDisplay.tsx, MarketQuotesTable.tsx (data visualization)
-│   ├── pages/             # NEW: IndividualStockInfo.tsx, MarketQuotesPage.tsx (page components)
-│   ├── services/          # Update: stock API service client
-│   └── config/            # Update: menu.ts (add 行情报价 item)
-└── tests/
+│   ├── pages/
+│   │   ├── StockInfo.tsx          # New: Individual stock page
+│   │   └── MarketQuotes.tsx       # New: Market quotes page
+│   ├── components/
+│   │   ├── StockDisplay.tsx       # New: Stock data display
+│   │   └── MarketQuotesTable.tsx  # New: Quotes table component
+│   └── services/
+│       └── stockApi.ts            # New: Frontend API client
+├── tests/
+│   └── e2e/
+│       └── stock-workflow.spec.ts # New: E2E tests
+└── package.json                   # Updated: React/TypeScript dependencies
+
+src/ (CLI)
+├── models/
+│   ├── stock.py                   # New: CLI stock models
+│   └── market_quote.py            # New: CLI market quote models
+├── services/
+│   └── stock_cli_service.py       # New: CLI stock operations
+└── cli/
+    └── commands/
+        └── stock_info.py          # New: CLI commands for stock data
 ```
 
-**Structure Decision**: Web application structure selected as feature requires both backend API development (two new services/endpoints) and frontend UI components (two new pages with table/grid displays) for comprehensive stock market data functionality.
+**Structure Decision**: Web application with separate backend and frontend deployments, following the project's established pattern. New feature adds stock-related models and services while maintaining modular architecture.
 
 ## Complexity Tracking
 

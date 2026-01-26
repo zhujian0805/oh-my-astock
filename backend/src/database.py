@@ -103,6 +103,24 @@ class DatabaseService:
             "has_connection": self.connection is not None
         }
 
+    async def get_stock_list(self) -> List[Dict[str, Any]]:
+        """Get list of available stocks for dropdown"""
+        sql = """
+        SELECT
+            code,
+            name,
+            CASE
+                WHEN CAST(code AS INTEGER) BETWEEN 000001 AND 003000 THEN 'Shenzhen'
+                WHEN CAST(code AS INTEGER) BETWEEN 600000 AND 699999 THEN 'Shanghai'
+                ELSE 'Unknown'
+            END as exchange,
+            true as is_active,
+            0 as priority
+        FROM stock_name_code
+        ORDER BY name ASC
+        """
+        return await self.query(sql)
+
 
 # Singleton instance
 db_service = DatabaseService()

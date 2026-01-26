@@ -1,38 +1,44 @@
-# Research Findings: Add Individual Stock Information and Market Quotes
+# Research Findings: Add Individual Stock Information Menu Item
 
 **Date**: 2026-01-26
-**Feature**: 001-stock-individual-info
+**Branch**: 001-stock-individual-info
 
-## Summary
+## Executive Summary
 
-The expanded feature scope includes both individual stock information and market quotes functionality. All technical requirements are clearly specified and align with existing project constitution and technology stack. No additional research was needed as all implementation details are already clarified.
+No additional research required. All technical context is fully specified in the project constitution and feature specification. Technology stack, dependencies, and implementation patterns are established and compliant with existing architecture.
 
 ## Technical Decisions
 
-**Decision**: Implement as two complementary features under same menu section
-**Rationale**: Both features serve stock market data needs and share similar technical patterns
-**Alternatives considered**: Separate branches (rejected due to shared infrastructure and user workflow)
+**Decision**: Use established technology stack (Python 3.10+, FastAPI, React/TypeScript, DuckDB, akshare)
+- **Rationale**: Fully documented in constitution, no alternatives needed
+- **Alternatives considered**: N/A - stack is mandated
+- **Impact**: Zero research overhead, immediate implementation possible
 
-**Decision**: Use existing akshare APIs for both features
-**Rationale**: stock_individual_info_em, stock_individual_basic_info_xq, and stock_bid_ask_em APIs are well-documented and already integrated in the codebase
-**Alternatives considered**: Alternative data providers (rejected due to established integration)
+**Decision**: Follow modular architecture patterns (services, models, CLI separation)
+- **Rationale**: Constitution principle I requires layered design
+- **Alternatives considered**: Monolithic approach (rejected due to constitution violation)
+- **Impact**: Ensures maintainability and testability
 
-**Decision**: Separate services for stock info vs market quotes
-**Rationale**: Different data structures and API patterns warrant separate services following modular architecture principle
-**Alternatives considered**: Single combined service (rejected due to complexity and different performance requirements)
+**Decision**: Implement test-first with contract and end-to-end tests
+- **Rationale**: Constitution principle II mandates test-first discipline
+- **Alternatives considered**: Test-after development (rejected due to constitution violation)
+- **Impact**: Ensures quality and prevents regressions
 
-**Decision**: Table format for market quotes display
-**Rationale**: Bid-ask data is naturally tabular and provides clear comparison across multiple stocks
-**Alternatives considered**: Chart visualization (deferred for future enhancement)
+**Decision**: Use DuckDB for data persistence
+- **Rationale**: Constitution principle III establishes DuckDB as single source of truth
+- **Alternatives considered**: Alternative databases (rejected due to constitution violation)
+- **Impact**: Consistent with existing data architecture
 
-## API Integration Details
+**Decision**: Include performance optimizations (rate limiting, retry logic)
+- **Rationale**: Constitution principle IV requires built-in performance considerations
+- **Alternatives considered**: Performance as afterthought (rejected due to constitution violation)
+- **Impact**: Meets 3s/2s response time requirements
 
-- **stock_individual_info_em**: Returns detailed stock fundamentals (6-digit codes)
-- **stock_individual_basic_info_xq**: Returns basic stock info (prefixed symbols SH/SZ)
-- **stock_bid_ask_em**: Returns current bid-ask prices and volumes for stocks
-- **Error handling**: Partial data display with source status indicators
-- **Performance**: 2-3 second targets align with existing service patterns
+**Decision**: Implement structured logging and error handling
+- **Rationale**: Constitution principle V requires observable systems
+- **Alternatives considered**: Minimal error handling (rejected due to constitution violation)
+- **Impact**: Supports debugging and monitoring
 
-## Implementation Approach
+## Resolved Items
 
-No research gaps identified. All requirements are implementable with existing technology stack, established patterns, and clarified specifications. The feature builds naturally on existing infrastructure while adding complementary market data functionality.
+All technical unknowns were pre-resolved through existing project constitution and established patterns. No research agents needed - implementation can proceed directly to design phase.

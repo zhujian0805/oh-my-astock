@@ -1,0 +1,274 @@
+openapi: 3.0.3
+info:
+  title: Oh My AStock API - Individual Stock Information
+  version: 1.0.0
+  description: API contracts for individual stock information and market quotes functionality
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+
+paths:
+  /stocks:
+    get:
+      summary: Get list of available stocks for dropdown
+      operationId: getStockList
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stocks:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/StockListItem'
+                  total:
+                    type: integer
+                    minimum: 0
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /stocks/{code}:
+    get:
+      summary: Get detailed information for a specific stock
+      operationId: getStockInfo
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^[0-9]{6}$'
+            example: "000001"
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Stock'
+        '400':
+          description: Invalid stock code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Stock not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /market-quotes:
+    get:
+      summary: Get current market quotes for curated stocks
+      operationId: getMarketQuotes
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  quotes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketQuote'
+                  last_updated:
+                    type: string
+                    format: date-time
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+components:
+  schemas:
+    StockListItem:
+      type: object
+      required:
+        - code
+        - name
+        - exchange
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          example: "000001"
+        name:
+          type: string
+          example: "平安银行"
+        exchange:
+          type: string
+          enum: [Shanghai, Shenzhen]
+          example: "Shenzhen"
+
+    Stock:
+      type: object
+      required:
+        - code
+        - symbol
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          example: "000001"
+        name:
+          type: string
+          example: "平安银行"
+        symbol:
+          type: string
+          pattern: '^(SH|SZ)[0-9]{6}$'
+          example: "SZ000001"
+        exchange:
+          type: string
+          enum: [Shanghai, Shenzhen]
+        industry:
+          type: string
+          example: "银行"
+        market_cap:
+          type: number
+          format: float
+        pe_ratio:
+          type: number
+          format: float
+        pb_ratio:
+          type: number
+          format: float
+        current_price:
+          type: number
+          format: float
+        change_percent:
+          type: number
+          format: float
+        volume:
+          type: integer
+          format: int64
+        turnover:
+          type: number
+          format: float
+        high_52w:
+          type: number
+          format: float
+        low_52w:
+          type: number
+          format: float
+        data_sources:
+          type: object
+          properties:
+            east_money:
+              type: boolean
+            xueqiu:
+              type: boolean
+        errors:
+          type: array
+          items:
+            type: string
+        last_updated:
+          type: string
+          format: date-time
+
+    MarketQuote:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9]{6}$'
+          example: "000001"
+        bid_price_1:
+          type: number
+          format: float
+        bid_volume_1:
+          type: integer
+        ask_price_1:
+          type: number
+          format: float
+        ask_volume_1:
+          type: integer
+        bid_price_2:
+          type: number
+          format: float
+        bid_volume_2:
+          type: integer
+        ask_price_2:
+          type: number
+          format: float
+        ask_volume_2:
+          type: integer
+        bid_price_3:
+          type: number
+          format: float
+        bid_volume_3:
+          type: integer
+        ask_price_3:
+          type: number
+          format: float
+        ask_volume_3:
+          type: integer
+        bid_price_4:
+          type: number
+          format: float
+        bid_volume_4:
+          type: integer
+        ask_price_4:
+          type: number
+          format: float
+        ask_volume_4:
+          type: integer
+        bid_price_5:
+          type: number
+          format: float
+        bid_volume_5:
+          type: integer
+        ask_price_5:
+          type: number
+          format: float
+        ask_volume_5:
+          type: integer
+        latest_price:
+          type: number
+          format: float
+        change_amount:
+          type: number
+          format: float
+        change_percent:
+          type: number
+          format: float
+        volume:
+          type: integer
+          format: int64
+        turnover:
+          type: number
+          format: float
+        last_updated:
+          type: string
+          format: date-time
+        error:
+          type: string
+
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          example: "Invalid stock code format"
+        code:
+          type: string
+          example: "INVALID_STOCK_CODE"
+
+  responses:
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -8,7 +8,7 @@ import logging
 from typing import Dict, List, Optional
 import datetime
 
-from fastapi import APIRouter, HTTPException, Query, Path
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..services.stock_info_service import StockInfoService
@@ -32,8 +32,6 @@ class StockListResponse(BaseModel):
 
 class StockInfoResponse(BaseModel):
     """Stock information response model."""
-    model_config = {"extra": "allow"}  # Allow extra fields
-
     code: str = Field(..., description="The 6-digit stock code requested")
     name: Optional[str] = Field(None, description="Stock name")
     symbol: Optional[str] = Field(None, description="Stock symbol")
@@ -108,7 +106,7 @@ async def get_stock_list() -> StockListResponse:
     }
 )
 async def get_stock_info(
-    code: str = Path(..., pattern=r'^\d{6}$', description="Stock code (6 digits)")
+    code: str = Query(..., pattern=r'^\d{6}$', description="Stock code (6 digits)")
 ) -> StockInfoResponse:
     """
     Get detailed information for a specific stock.
@@ -126,25 +124,10 @@ async def get_stock_info(
 
         result = service.get_stock_info(code)
 
-        # Transform the result to match the expected response format
-        transformed_result = {
-            "code": result["stock_code"],
-            "data_sources": {
-                "east_money": result["source_status"]["em_api"] == "success",
-                "xueqiu": result["source_status"]["xq_api"] == "success"
-            },
-            "errors": [],
-            "last_updated": datetime.datetime.now().isoformat()
-        }
+        # Add timestamp
+        result["last_updated"] = datetime.datetime.now().isoformat()
 
-        # Add all the data fields directly to the result
-        transformed_result.update(result["data"])
-
-        # Debug logging
-        logger.info(f"Stock info for {code}: data_keys={list(result['data'].keys())}, data_values={result['data']}, data_sources={transformed_result['data_sources']}")
-        logger.info(f"Final transformed_result keys: {list(transformed_result.keys())}")
-
-        return StockInfoResponse(**transformed_result)
+        return StockInfoResponse(**result)
 
     except HTTPException:
         raise

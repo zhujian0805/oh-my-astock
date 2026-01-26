@@ -51,6 +51,10 @@ As a user, I want to view current market quotes and bid-ask prices for stocks so
 
 When the Xueqiu API fails, the system MUST show partial data from the East Money API and clearly indicate that the Xueqiu API failed to load data.
 
+- How should the system handle rate limiting or throttling from the external APIs?
+
+When external APIs impose rate limits, the system MUST implement automatic retry logic with exponential backoff and display user-friendly error messages indicating temporary unavailability.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -66,11 +70,27 @@ When the Xueqiu API fails, the system MUST show partial data from the East Money
 - **FR-009**: System MUST provide a menu item named "行情报价" under the "股市数据" section
 - **FR-010**: Backend MUST provide an API endpoint that returns current market quotes data
 - **FR-011**: Frontend MUST display market quotes in a table format showing bid-ask prices and volumes
+- **FR-012**: Backend MUST provide an API endpoint that returns a list of available stocks for the dropdown menu
+- **FR-013**: Frontend MUST populate the stock dropdown dynamically from the backend API
+- **FR-014**: Backend MUST merge stock data using field-level precedence rules when both APIs provide the same field
+- **FR-015**: Backend MUST provide market quotes for a predefined list of popular/market-cap heavy stocks
+- **FR-016**: Frontend MUST display market quotes table with the curated stock selection
 
 ### Key Entities *(include if feature involves data)*
 
 - **Stock**: Represents an individual stock with a unique code, containing merged basic and detailed information attributes without implementation details
 - **MarketQuote**: Represents current market bid-ask data for stocks, including buy/sell prices and volumes
+- **StockList**: Represents the collection of available stocks for dropdown selection
+
+### Testing Requirements
+
+- **TR-001**: System MUST implement contract tests for all backend API interfaces to ensure API behavior matches expectations
+- **TR-002**: System MUST implement end-to-end tests covering complete user flows to verify frontend-backend integration
+- **TR-003**: Tests MUST be run automatically whenever changes are made to backend APIs or frontend integration code
+
+### Non-Functional Requirements
+
+- **NFR-001**: System MUST handle external API rate limiting with automatic retry logic and clear error messaging
 
 ## Clarifications
 
@@ -81,6 +101,11 @@ When the Xueqiu API fails, the system MUST show partial data from the East Money
 - Q: How should the '行情报价' (market quotes/bid-ask data) feature be implemented? → A: Add market quotes table for multiple stocks
 - Q: How should the system handle invalid or non-existent stock codes when a user selects them from the dropdown? → A: Empty state
 - Q: Always add a step to restart applications using manage.sh → A: Use manage.sh to restart the applications, including frontend and backend, to make sure it's runnable
+- Q: What testing strategy should be implemented to ensure all backend APIs are comprehensively tested and that the frontend can always access the backend APIs? → A: Contract tests for API interfaces + end-to-end tests covering full user flows
+- Q: How should the stock list for the dropdown menu in the 个股信息 page be populated? → A: Dynamic list retrieved from the backend/database
+- Q: How should data conflicts between the two APIs be resolved during merging? → A: Merge with field-level precedence rules
+- Q: Which stocks should be displayed in the market quotes table? → A: Predefined list of popular/market-cap heavy stocks
+- Q: How should the system handle rate limiting or throttling from the external APIs? → A: Combination of retry logic and user-friendly error handling
 
 ## Success Criteria *(mandatory)*
 
