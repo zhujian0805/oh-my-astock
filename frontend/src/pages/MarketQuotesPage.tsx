@@ -59,8 +59,17 @@ const MarketQuotesPage: React.FC = () => {
     const loadAvailableStocks = async () => {
       setStocksLoading(true);
       try {
-        // For now, we'll create a mock list of popular stocks
-        // In a real app, this would come from an API
+        const response = await fetch('/api/stocks?limit=1000'); // Get up to 1000 stocks
+        const data = await response.json();
+        // Map Stock[] to StockListItem[] by adding exchange field
+        const stocksWithExchange: StockListItem[] = data.data.map((stock: { code: string; name: string }) => ({
+          ...stock,
+          exchange: stock.code.startsWith('6') ? 'SH' : 'SZ', // 6xxxx = Shanghai, others = Shenzhen
+        }));
+        setAvailableStocks(stocksWithExchange);
+      } catch (err) {
+        console.error('Failed to load stocks:', err);
+        // Fallback to mock data if API fails
         const mockStocks: StockListItem[] = [
           { code: '000001', name: '平安银行', exchange: 'SZ' },
           { code: '000002', name: '万科A', exchange: 'SZ' },
@@ -79,8 +88,6 @@ const MarketQuotesPage: React.FC = () => {
           { code: '600606', name: '绿地控股', exchange: 'SH' },
         ];
         setAvailableStocks(mockStocks);
-      } catch (err) {
-        console.error('Failed to load stocks:', err);
       } finally {
         setStocksLoading(false);
       }
