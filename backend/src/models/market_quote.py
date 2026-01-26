@@ -41,10 +41,21 @@ class MarketQuote(BaseModel):
 
     # Market data
     latest_price: Optional[float] = None
+    average_price: Optional[float] = None
     change_amount: Optional[float] = None
     change_percent: Optional[float] = None
     volume: Optional[int] = None
     turnover: Optional[float] = None
+    turnover_rate: Optional[float] = None
+    volume_ratio: Optional[float] = None
+    high: Optional[float] = None
+    low: Optional[float] = None
+    open: Optional[float] = None
+    previous_close: Optional[float] = None
+    limit_up: Optional[float] = None
+    limit_down: Optional[float] = None
+    external_volume: Optional[int] = None
+    internal_volume: Optional[int] = None
 
     # Metadata
     last_updated: datetime = datetime.now()

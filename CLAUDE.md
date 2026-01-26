@@ -85,6 +85,15 @@ stocklib fetch-stocks --default-db # Fetch stock data
 - **Docstrings:** Use for all public functions and classes
 - **Testing:** Write contract tests for all new features
 
+## Development Workflow
+
+**After Making Changes:**
+```bash
+./manage.sh resart all               # Restart frontend and backend services
+```
+- Always run `./manage.sh resart all` after making any code changes to restart the frontend and backend services
+- Fix any issues that arise from the restart before continuing development
+
 ## Recent Changes
 - 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs), DuckDB >= 0.8.0 (database)
 - 001-stock-individual-info: Added Python 3.10+ (match statements, modern f-strings required) + FastAPI/Pydantic (backend), React/TypeScript/Tailwind CSS (frontend), akshare >= 1.10.0 (Chinese stock APIs)

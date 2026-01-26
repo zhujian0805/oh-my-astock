@@ -124,8 +124,8 @@ class MarketQuotesService:
             else:
                 data[key] = value
 
-        # Extract bid/ask data (typically multiple rows per level)
-        bid_ask_data = self._extract_bid_ask_levels(df)
+        # Extract bid/ask data
+        bid_ask_data = self._extract_bid_ask_levels(data)
 
         # Create MarketQuote object
         quote = MarketQuote(
@@ -135,10 +135,21 @@ class MarketQuotesService:
             **bid_ask_data,
             # Market data - map to correct akshare field names
             latest_price=data.get('最新'),
+            average_price=data.get('均价'),
             change_amount=data.get('涨跌'),
             change_percent=data.get('涨幅'),
             volume=data.get('总手'),
             turnover=data.get('金额'),
+            turnover_rate=data.get('换手'),
+            volume_ratio=data.get('量比'),
+            high=data.get('最高'),
+            low=data.get('最低'),
+            open=data.get('今开'),
+            previous_close=data.get('昨收'),
+            limit_up=data.get('涨停'),
+            limit_down=data.get('跌停'),
+            external_volume=data.get('外盘'),
+            internal_volume=data.get('内盘'),
             # Metadata
             last_updated=datetime.now(),
             data_source="east_money"
@@ -146,47 +157,37 @@ class MarketQuotesService:
 
         return quote
 
-    def _extract_bid_ask_levels(self, df) -> Dict[str, Any]:
+    def _extract_bid_ask_levels(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Extract bid and ask levels from the DataFrame
+        Extract bid and ask levels from the parsed data dict
 
         Args:
-            df: akshare DataFrame
+            data: Dict containing all parsed akshare data
 
         Returns:
             Dict with bid/ask level data
         """
         levels_data = {}
 
-        # Group data by level (usually indicated in item names)
-        bid_levels = {}
-        ask_levels = {}
+        # Extract bid (buy) levels
+        for level in range(1, 6):
+            bid_price_key = f'buy_{level}'
+            bid_volume_key = f'buy_{level}_vol'
 
-        for _, row in df.iterrows():
-            item = str(row['item']).strip()
-            value = row['value']
+            if bid_price_key in data:
+                levels_data[f'bid_price_{level}'] = data[bid_price_key]
+            if bid_volume_key in data:
+                levels_data[f'bid_volume_{level}'] = data[bid_volume_key]
 
-            # Parse bid levels
-            if '买盘' in item or 'bid' in item.lower():
-                level = self._extract_level_number(item)
-                if level and level <= 5:
-                    if '价' in item or 'price' in item.lower():
-                        bid_levels[f'bid_price_{level}'] = self._parse_numeric(value)
-                    elif '量' in item or 'volume' in item.lower():
-                        bid_levels[f'bid_volume_{level}'] = self._parse_numeric(value, int)
+        # Extract ask (sell) levels
+        for level in range(1, 6):
+            ask_price_key = f'sell_{level}'
+            ask_volume_key = f'sell_{level}_vol'
 
-            # Parse ask levels
-            elif '卖盘' in item or 'ask' in item.lower():
-                level = self._extract_level_number(item)
-                if level and level <= 5:
-                    if '价' in item or 'price' in item.lower():
-                        ask_levels[f'ask_price_{level}'] = self._parse_numeric(value)
-                    elif '量' in item or 'volume' in item.lower():
-                        ask_levels[f'ask_volume_{level}'] = self._parse_numeric(value, int)
-
-        # Combine bid and ask data
-        levels_data.update(bid_levels)
-        levels_data.update(ask_levels)
+            if ask_price_key in data:
+                levels_data[f'ask_price_{level}'] = data[ask_price_key]
+            if ask_volume_key in data:
+                levels_data[f'ask_volume_{level}'] = data[ask_volume_key]
 
         return levels_data
 
