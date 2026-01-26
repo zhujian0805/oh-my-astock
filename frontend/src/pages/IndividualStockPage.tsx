@@ -3,20 +3,22 @@
  * 重构以匹配 StockPrices 布局，使用下拉菜单和表格显示
  */
 
-import React, { useState, useCallback } from 'react';
-import { Stock } from '../types';
+import React, { useState, useCallback, useEffect } from 'react';
+import { StockListItem, ApiError } from '../types';
 import StockSelector from '../components/StockSelector/StockSelector';
-import { useStocks } from '../hooks/useStocks';
 import { stockInfoApi, StockInfoResponse } from '../services/stockInfoApi';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
 import EmptyState from '../components/common/EmptyState';
 
 const IndividualStockPage: React.FC = () => {
-  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [selectedStock, setSelectedStock] = useState<StockListItem | null>(null);
   const [stockData, setStockData] = useState<StockInfoResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null | undefined>(null);
+  const [stocks, setStocks] = useState<StockListItem[]>([]);
+  const [stocksLoading, setStocksLoading] = useState<boolean>(true);
+  const [stocksError, setStocksError] = useState<ApiError | null>(null);
 
   // Field name translations from English to Chinese
   const fieldTranslations: Record<string, string> = {
@@ -137,10 +139,25 @@ const IndividualStockPage: React.FC = () => {
     return fieldTranslations[key] || key; // Return translated name or original key if not found
   };
 
-  // 获取股票列表
-  const { stocks, isLoading: stocksLoading, error: stocksError } = useStocks();
+  // Load stock list on component mount
+  useEffect(() => {
+    const loadStocks = async () => {
+      try {
+        setStocksLoading(true);
+        const response = await stockInfoApi.getStockList();
+        setStocks(response.stocks);
+        setStocksError(null);
+      } catch (err) {
+        setStocksError(err as ApiError);
+      } finally {
+        setStocksLoading(false);
+      }
+    };
 
-  const handleStockSelect = useCallback(async (stock: Stock | null) => {
+    loadStocks();
+  }, []);
+
+  const handleStockSelect = useCallback(async (stock: StockListItem | null) => {
     setSelectedStock(stock);
     setError(null);
 
@@ -155,7 +172,8 @@ const IndividualStockPage: React.FC = () => {
       setStockData(data);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : '获取股票信息失败');
+      const apiError = err as ApiError;
+      setError(apiError.message || '获取股票信息失败');
       setStockData(null);
     } finally {
       setLoading(false);
@@ -172,7 +190,7 @@ const IndividualStockPage: React.FC = () => {
             selectedStock={selectedStock}
             onSelect={handleStockSelect}
             isLoading={stocksLoading}
-            error={stocksError}
+            error={stocksError?.message || null}
           />
         </div>
       </div>
@@ -195,18 +213,18 @@ const IndividualStockPage: React.FC = () => {
                 {stockData && (
                   <div className="flex space-x-2 text-xs">
                     <span className={`px-2 py-1 rounded-full ${
-                      stockData.source_status.em_api === 'success'
+                      stockData.data_sources.east_money
                         ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                         : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                     }`}>
-                      东方财富: {stockData.source_status.em_api === 'success' ? '成功' : '失败'}
+                      东方财富: {stockData.data_sources.east_money ? '成功' : '失败'}
                     </span>
                     <span className={`px-2 py-1 rounded-full ${
-                      stockData.source_status.xq_api === 'success'
+                      stockData.data_sources.xueqiu
                         ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
                         : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
                     }`}>
-                      雪球: {stockData.source_status.xq_api === 'success' ? '成功' : '失败'}
+                      雪球: {stockData.data_sources.xueqiu ? '成功' : '失败'}
                     </span>
                   </div>
                 )}
@@ -235,13 +253,15 @@ const IndividualStockPage: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {Object.entries(stockData.data).map(([key, value], index) => (
+                      {Object.entries(stockData).filter(([key]) =>
+                        !['code', 'data_sources', 'errors', 'last_updated'].includes(key)
+                      ).map(([key, value], index) => (
                         <tr key={key} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors bg-white dark:bg-gray-800">
                           <td className="px-3 py-2 whitespace-nowrap text-xs font-medium text-gray-900 dark:text-gray-100">
                             {getTranslatedFieldName(key)}
                           </td>
                           <td className="px-3 py-2 whitespace-nowrap text-xs text-gray-500 dark:text-gray-400">
-                            {value && value !== 'None' ? value : '-'}
+                            {value !== null && value !== undefined && value !== 'None' ? String(value) : '-'}
                           </td>
                         </tr>
                       ))}

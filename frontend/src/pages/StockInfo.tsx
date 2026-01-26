@@ -1,14 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import StockSelector from '../components/StockSelector/StockSelector';
 import StockInfoDisplay from '../components/StockInfoDisplay';
-import { useStocks } from '../hooks/useStocks';
-import { Stock } from '../types';
+import { stockInfoApi } from '../services/stockInfoApi';
+import { StockListItem } from '../types';
 
-const IndividualStockInfo: React.FC = () => {
-  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
-  const { stocks, isLoading, error } = useStocks();
+const StockInfo: React.FC = () => {
+  const [selectedStock, setSelectedStock] = useState<StockListItem | null>(null);
+  const [stocks, setStocks] = useState<StockListItem[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleStockSelect = (stock: Stock) => {
+  useEffect(() => {
+    fetchStockList();
+  }, []);
+
+  const fetchStockList = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const response = await stockInfoApi.getStockList();
+      setStocks(response.stocks);
+    } catch (err: any) {
+      setError(err.message || '获取股票列表失败');
+      console.error('Error fetching stock list:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStockSelect = (stock: StockListItem) => {
     setSelectedStock(stock);
   };
 
@@ -46,4 +67,4 @@ const IndividualStockInfo: React.FC = () => {
   );
 };
 
-export default IndividualStockInfo;
+export default StockInfo;

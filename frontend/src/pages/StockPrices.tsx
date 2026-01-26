@@ -4,23 +4,41 @@
  * Integrates StockSelector and StockChart
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DatePicker from 'react-datepicker';
-import { Stock } from '@/types';
+import { StockListItem, ApiError } from '@/types';
 import StockSelector from '@/components/StockSelector/StockSelector';
 import StockChart from '@/components/StockChart/StockChart';
 import StockTable from '@/components/StockTable/StockTable';
-import { useStocks } from '@/hooks/useStocks';
 import { useHistoricalData } from '@/hooks/useHistoricalData';
+import { stockInfoApi } from '@/services/stockInfoApi';
 import { formatDate } from '@/utils/formatters';
 
 const StockPrices: React.FC = () => {
-  const [selectedStock, setSelectedStock] = useState<Stock | null>(null);
+  const [selectedStock, setSelectedStock] = useState<StockListItem | null>(null);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
+  const [stocks, setStocks] = useState<StockListItem[]>([]);
+  const [stocksLoading, setStocksLoading] = useState<boolean>(true);
+  const [stocksError, setStocksError] = useState<ApiError | null>(null);
 
-  // Fetch stocks list
-  const { stocks, isLoading: stocksLoading, error: stocksError } = useStocks();
+  // Load stock list on component mount
+  useEffect(() => {
+    const loadStocks = async () => {
+      try {
+        setStocksLoading(true);
+        const response = await stockInfoApi.getStockList();
+        setStocks(response.stocks);
+        setStocksError(null);
+      } catch (err) {
+        setStocksError(err as ApiError);
+      } finally {
+        setStocksLoading(false);
+      }
+    };
+
+    loadStocks();
+  }, []);
 
   // Fetch historical data for selected stock
   const {
@@ -57,7 +75,7 @@ const StockPrices: React.FC = () => {
             selectedStock={selectedStock}
             onSelect={setSelectedStock}
             isLoading={stocksLoading}
-            error={stocksError}
+            error={stocksError?.message || null}
           />
         </div>
         

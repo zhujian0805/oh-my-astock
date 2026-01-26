@@ -8,7 +8,6 @@ import StockPrices from '../pages/StockPrices';
 import StockMarketOverviewPage from '../pages/StockMarketOverviewPage';
 import Home from '../pages/Home';
 import IndividualStockPage from '../pages/IndividualStockPage';
-import IndividualStockInfo from '../pages/IndividualStockInfo';
 import MarketQuotesPage from '../pages/MarketQuotesPage';
 
 /**
@@ -38,7 +37,7 @@ export const menuItems: MenuItem[] = [
       {
         id: 'stock-individual',
         label: '个股信息',
-        component: IndividualStockInfo,  // Updated to use new component
+        component: IndividualStockPage,  // Updated to use new component
       },
       {
         id: 'market-quotes',

@@ -16,6 +16,105 @@ export interface Stock {
 }
 
 /**
+ * Stock list item for dropdown selection
+ */
+export interface StockListItem {
+  id?: number;
+  code: string;
+  name: string;
+  exchange: string;
+  is_active?: boolean;
+  priority?: number;
+  created_at?: string;
+}
+
+/**
+ * Detailed stock information merged from multiple APIs
+ */
+export interface StockInfo {
+  // Primary key
+  code: string;
+
+  // Basic info (precedence: Xueqiu > East Money)
+  name?: string;
+  symbol?: string;
+  exchange?: string;
+
+  // East Money API fields
+  industry?: string;
+  total_market_cap?: number;
+  circulating_market_cap?: number;
+  pe_ratio?: number; // East Money preferred
+  pb_ratio?: number; // East Money preferred
+  roe?: number;
+  gross_margin?: number;
+  net_margin?: number;
+
+  // Xueqiu API fields
+  current_price?: number; // Xueqiu preferred
+  change_percent?: number; // Xueqiu preferred
+  volume?: number; // Xueqiu preferred
+  turnover?: number; // Xueqiu preferred
+  high_52w?: number;
+  low_52w?: number;
+  eps?: number;
+  dividend_yield?: number;
+
+  // Metadata
+  last_updated?: string;
+  data_sources: {
+    east_money: boolean;
+    xueqiu: boolean;
+  };
+  errors: string[];
+}
+
+/**
+ * Market quote with bid-ask data
+ */
+export interface MarketQuote {
+  // Basic identifiers
+  code: string;
+  name?: string;
+
+  // Bid prices and volumes (5 levels each)
+  bid_price_1?: number;
+  bid_volume_1?: number;
+  bid_price_2?: number;
+  bid_volume_2?: number;
+  bid_price_3?: number;
+  bid_volume_3?: number;
+  bid_price_4?: number;
+  bid_volume_4?: number;
+  bid_price_5?: number;
+  bid_volume_5?: number;
+
+  // Ask prices and volumes (5 levels each)
+  ask_price_1?: number;
+  ask_volume_1?: number;
+  ask_price_2?: number;
+  ask_volume_2?: number;
+  ask_price_3?: number;
+  ask_volume_3?: number;
+  ask_price_4?: number;
+  ask_volume_4?: number;
+  ask_price_5?: number;
+  ask_volume_5?: number;
+
+  // Market data
+  latest_price?: number;
+  change_amount?: number;
+  change_percent?: number;
+  volume?: number;
+  turnover?: number;
+
+  // Metadata
+  last_updated?: string;
+  data_source?: string;
+  error?: string;
+}
+
+/**
  * Historical price record for a stock on a specific date
  */
 export interface HistoricalPrice {
@@ -158,11 +257,11 @@ export interface UseMenuReturn {
  * Props for StockSelector component
  */
 export interface StockSelectorProps {
-  stocks: Stock[];
-  selectedStock: Stock | null;
-  onSelect: (stock: Stock) => void;
+  stocks: StockListItem[];
+  selectedStock: StockListItem | null;
+  onSelect: (stock: StockListItem) => void;
   isLoading?: boolean;
-  error?: ApiError | null;
+  error?: string | null;
 }
 
 /**

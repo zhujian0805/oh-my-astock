@@ -36,8 +36,8 @@ const StockInfoDisplay: React.FC<StockInfoDisplayProps> = ({ stockCode }) => {
     }
   };
 
-  const getStatusBadge = (status: 'success' | 'failed') => {
-    return status === 'success' ? (
+  const getStatusBadge = (success: boolean) => {
+    return success ? (
       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
         成功
       </span>
@@ -48,47 +48,48 @@ const StockInfoDisplay: React.FC<StockInfoDisplayProps> = ({ stockCode }) => {
     );
   };
 
-  const getCacheStatusBadge = (status: string) => {
-    const statusMap = {
-      fresh: { text: '最新', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
-      cached: { text: '缓存', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' },
-      stale: { text: '过期', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' }
-    };
-
-    const config = statusMap[status as keyof typeof statusMap] || statusMap.cached;
-
-    return (
-      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${config.color}`}>
-        {config.text}
-      </span>
-    );
-  };
-
   // Field translations for better display
   const fieldTranslations: Record<string, string> = {
-    '最新': '最新价格',
-    '股票代码': '股票代码',
-    '股票简称': '股票简称',
-    '总市值': '总市值',
-    '流通市值': '流通市值',
-    '市盈率': '市盈率',
-    '市净率': '市净率',
-    '行业': '行业',
-    'org_name_cn': '公司名称',
-    'org_short_name_cn': '公司简称',
+    'name': '股票名称',
+    'symbol': '股票代码',
+    'exchange': '交易所',
+    'industry': '行业',
+    'total_market_cap': '总市值',
+    'circulating_market_cap': '流通市值',
     'pe_ratio': '市盈率',
     'pb_ratio': '市净率',
-    'market_cap': '市值',
-    'total_shares': '总股本',
-    'circulating_shares': '流通股本',
-    'chairman': '董事长',
-    'listing_date': '上市日期',
-    'province': '省份',
-    'sector': '板块'
+    'roe': '净利率',
+    'gross_margin': '毛利率',
+    'net_margin': '净利率',
+    'current_price': '当前价格',
+    'change_percent': '涨跌幅',
+    'volume': '成交量',
+    'turnover': '成交额',
+    'high_52w': '52周最高',
+    'low_52w': '52周最低',
+    'eps': '每股收益',
+    'dividend_yield': '股息率'
   };
 
   const translateField = (field: string): string => {
     return fieldTranslations[field] || field;
+  };
+
+  const formatValue = (key: string, value: any): string => {
+    if (value === null || value === undefined) return '暂无数据';
+
+    // Format numbers
+    if (typeof value === 'number') {
+      if (key.includes('price') || key.includes('cap') || key.includes('turnover')) {
+        return value.toLocaleString('zh-CN', { maximumFractionDigits: 2 });
+      }
+      if (key.includes('percent') || key.includes('yield') || key.includes('margin') || key.includes('ratio')) {
+        return `${(value * 100).toFixed(2)}%`;
+      }
+      return value.toLocaleString('zh-CN');
+    }
+
+    return String(value);
   };
 
   if (loading) {
@@ -138,32 +139,40 @@ const StockInfoDisplay: React.FC<StockInfoDisplayProps> = ({ stockCode }) => {
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-            股票信息 - {data.stock_code}
+            股票信息 - {data.code}
           </h2>
-          {getCacheStatusBadge(data.cache_status)}
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            更新时间: {new Date(data.last_updated || '').toLocaleString('zh-CN')}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div>
             <span className="text-gray-600 dark:text-gray-400">数据来源状态:</span>
             <div className="mt-1 space-y-1">
               <div className="flex items-center space-x-2">
                 <span className="text-gray-700 dark:text-gray-300">东方财富:</span>
-                {getStatusBadge(data.source_status.em_api)}
+                {getStatusBadge(data.data_sources.east_money)}
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-gray-700 dark:text-gray-300">雪球:</span>
-                {getStatusBadge(data.source_status.xq_api)}
+                {getStatusBadge(data.data_sources.xueqiu)}
               </div>
             </div>
           </div>
 
-          <div className="md:col-span-2">
-            <span className="text-gray-600 dark:text-gray-400">最后更新:</span>
-            <div className="mt-1 text-gray-900 dark:text-white font-mono">
-              {new Date(data.timestamp).toLocaleString('zh-CN')}
+          {data.errors && data.errors.length > 0 && (
+            <div>
+              <span className="text-gray-600 dark:text-gray-400">错误信息:</span>
+              <div className="mt-1">
+                {data.errors.map((error, index) => (
+                  <div key={index} className="text-red-600 dark:text-red-400 text-xs">
+                    {error}
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -174,19 +183,23 @@ const StockInfoDisplay: React.FC<StockInfoDisplayProps> = ({ stockCode }) => {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {Object.entries(data.data).map(([key, value]) => (
+          {Object.entries(data).filter(([key]) =>
+            !['code', 'data_sources', 'errors', 'last_updated'].includes(key)
+          ).map(([key, value]) => (
             <div key={key} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
               <div className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
                 {translateField(key)}
               </div>
               <div className="text-gray-900 dark:text-white font-mono text-sm break-all">
-                {value || '暂无数据'}
+                {formatValue(key, value)}
               </div>
             </div>
           ))}
         </div>
 
-        {Object.keys(data.data).length === 0 && (
+        {Object.keys(data).filter(key =>
+          !['code', 'data_sources', 'errors', 'last_updated'].includes(key)
+        ).length === 0 && (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400">
             暂无股票数据
           </div>

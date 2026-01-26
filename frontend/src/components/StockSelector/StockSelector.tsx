@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Stock, StockSelectorProps } from '../../types';
+import { StockListItem, StockSelectorProps } from '../../types';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ErrorMessage from '../common/ErrorMessage';
 import EmptyState from '../common/EmptyState';
@@ -33,7 +33,7 @@ const StockSelector: React.FC<StockSelectorProps> = ({
     );
   }, [stocks, searchQuery]);
 
-  const handleSelect = (stock: Stock) => {
+  const handleSelect = (stock: StockListItem) => {
     onSelect(stock);
     setIsOpen(false);
     setSearchQuery('');

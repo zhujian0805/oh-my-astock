@@ -4,20 +4,18 @@
  */
 
 import axios from 'axios';
+import { StockListItem, StockInfo } from '../types';
 
-export interface StockInfoResponse {
-  stock_code: string;
-  data: Record<string, string>;
-  source_status: {
-    em_api: 'success' | 'failed';
-    xq_api: 'success' | 'failed';
-  };
-  timestamp: string;
-  cache_status: string;
+export interface StockListResponse {
+  stocks: StockListItem[];
 }
+
+export interface StockInfoResponse extends StockInfo {}
 
 export interface StockInfoError {
   error: string;
+  code?: string;
+  details?: string;
 }
 
 class StockInfoApiService {
@@ -28,12 +26,33 @@ class StockInfoApiService {
   }
 
   /**
+   * Get list of available stocks
+   */
+  async getStockList(): Promise<StockListResponse> {
+    try {
+      const response = await axios.get<StockListResponse>(
+        `${this.baseUrl}/stocks`,
+        {
+          timeout: 10000, // 10 second timeout
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || 'Failed to fetch stock list');
+      }
+      throw new Error('Network error, please check your connection');
+    }
+  }
+
+  /**
    * Get individual stock information
    */
   async getStockInfo(stockCode: string): Promise<StockInfoResponse> {
     try {
       const response = await axios.get<StockInfoResponse>(
-        `${this.baseUrl}/stocks/${stockCode}/info`,
+        `${this.baseUrl}/stocks/${stockCode}`,
         {
           timeout: 30000, // 30 second timeout
         }
@@ -44,16 +63,16 @@ class StockInfoApiService {
       if (axios.isAxiosError(error)) {
         // Handle specific HTTP errors
         if (error.response?.status === 400) {
-          throw new Error('Invalid stock code format');
+          throw new Error(error.response.data?.error || 'Invalid stock code format');
         }
         if (error.response?.status === 404) {
-          throw new Error('Stock data not available');
+          throw new Error(error.response.data?.error || 'Stock data not available');
         }
         if (error.response?.status === 429) {
           throw new Error('Rate limit exceeded, please try again later');
         }
         if (error.response?.status === 500) {
-          throw new Error('Server error, please try again later');
+          throw new Error(error.response.data?.error || 'Server error, please try again later');
         }
 
         // Network or other axios error
