@@ -19,13 +19,13 @@ class Settings(BaseModel):
     debug: bool = os.getenv("DEBUG", "false").lower() == "true"
 
     # Server
-    port: int = int(os.getenv("PORT", "8000"))
+    port: int = int(os.getenv("PORT", "9000"))
 
     # Database
     database_path: str = os.getenv("DATABASE_PATH", "../data/stocks.duckdb")
 
     # CORS - parsed manually
-    cors_origins_string: str = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://localhost:3000,http://localhost:4142")
+    cors_origins_string: str = os.getenv("CORS_ORIGINS", "http://localhost:8080,http://localhost:3000,http://localhost:5173")
 
     # Logging
     log_level: str = os.getenv("LOG_LEVEL", "INFO")

@@ -171,7 +171,7 @@ start_backend() {
     fi
 
     # Start backend with uvicorn
-    uvicorn src.main:app --host 0.0.0.0 --port 8000 --reload > "$BACKEND_LOG" 2>&1 &
+    uvicorn src.main:app --host 0.0.0.0 --port 9000 --reload > "$BACKEND_LOG" 2>&1 &
     local pid=$!
     echo $pid > "$BACKEND_PID_FILE"
 
@@ -180,7 +180,7 @@ start_backend() {
     if kill -0 $pid 2>/dev/null; then
         print_success "Backend started (PID: $pid)"
         print_info "Backend logs: $BACKEND_LOG"
-        print_info "Backend URL: http://localhost:8000"
+        print_info "Backend URL: http://localhost:9000"
     else
         print_error "Backend failed to start. Check logs at: $BACKEND_LOG"
         rm -f "$BACKEND_PID_FILE"
@@ -249,7 +249,7 @@ start_frontend() {
     if kill -0 $pid 2>/dev/null; then
         print_success "Frontend started (PID: $pid)"
         print_info "Frontend logs: $FRONTEND_LOG"
-        print_info "Frontend URL: http://localhost:4142"
+        print_info "Frontend URL: http://localhost:8080"
     else
         print_error "Frontend failed to start. Check logs at: $FRONTEND_LOG"
         rm -f "$FRONTEND_PID_FILE"
@@ -359,7 +359,7 @@ show_status() {
     # Backend status
     if is_running "$BACKEND_PID_FILE"; then
         local pid=$(cat "$BACKEND_PID_FILE")
-        print_success "Backend: Running (PID: $pid, URL: http://localhost:8000)"
+        print_success "Backend: Running (PID: $pid, URL: http://localhost:9000)"
     else
         print_warning "Backend: Stopped"
     fi
@@ -367,7 +367,7 @@ show_status() {
     # Frontend status
     if is_running "$FRONTEND_PID_FILE"; then
         local pid=$(cat "$FRONTEND_PID_FILE")
-        print_success "Frontend: Running (PID: $pid, URL: http://localhost:4142)"
+        print_success "Frontend: Running (PID: $pid, URL: http://localhost:8080)"
     else
         print_warning "Frontend: Stopped"
     fi
@@ -538,8 +538,8 @@ Examples:
     $0 test all              Run all tests
 
 Service URLs:
-    Backend:  http://localhost:8000
-    Frontend: http://localhost:4142
+    Backend:  http://localhost:9000
+    Frontend: http://localhost:8080
 
 Log Files:
     Backend:  $BACKEND_LOG
